@@ -135,16 +135,15 @@ namespace AngryBee
         static void Main(string[] args)
         {
             Program program = new Program();
-            var ai = new AI.AI();
+            var ai = new AI.AI_PriorityErasing();
             int portId, maxDepth;
 
             Console.WriteLine("ポート番号を入力（先手15000, 後手15001)＞");
             portId = int.Parse(Console.ReadLine());
-            Console.WriteLine("探索の深さの上限を入力（深さ = ターン数 * 2, 5以下が目安）");
+            Console.WriteLine("探索の深さの上限を入力（z深さ = ターン数 * 2, 5以下が目安）");
             maxDepth = int.Parse(Console.ReadLine());
 
             manager.Start(portId);
-
             {
                 var proc = System.Diagnostics.Process.GetCurrentProcess();
                 manager.Write(DataKind.Connect, new Connect(ProgramKind.AI) { ProcessId = proc.Id });
@@ -168,10 +167,10 @@ namespace AngryBee
                 {
                     //TODO: ai.Beginの戻り値を「指し手」にする。
                     var res = ai.Begin(maxDepth, board, MeBoard, EnemyBoard, new Boards.Player(Me1, Me2), new Boards.Player(Enemy1, Enemy2));
-                    manager.Write(DataKind.Decided, res.Item2);
+                    manager.Write(DataKind.Decided, res);
                     lock (SyncRoot)
                     {
-                        Console.WriteLine($"{res.Item2.MeAgent1.X}, {res.Item2.MeAgent1.Y}   {res.Item2.MeAgent2.X}, {res.Item2.MeAgent2.Y}");
+                        Console.WriteLine($"{res.MeAgent1.X}, {res.MeAgent1.Y}   {res.MeAgent2.X}, {res.MeAgent2.Y}");
                     }
                 }
                 if (i == 3) { break; }
