@@ -11,7 +11,7 @@ namespace AngryBee.AI
     /// 深さを制限した深さ優先探索を用いて、最高得点をとれるパターンを計算するAI。
     /// タイルを除去するときの加点のみを3倍にして計算しているので、近くに敵のタイルがあれば、妨害を優先して動く。
     /// </summary>
-    public class AI_PriorityErasing
+    public class AI_PriorityErasing : MCTProcon29Protocol.AIFramework.AIBase
     {
         Rule.MovableChecker Checker = new Rule.MovableChecker();
         PointEvaluator.Normal PointEvaluator = new PointEvaluator.Normal();
@@ -19,14 +19,12 @@ namespace AngryBee.AI
         VelocityPoint[] WayEnumerator = { (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1) };
 
         bool[] isDesidedNextErase = new bool[2];
-        public Decided Begin(in int MaxDepth, BoardSetting setting, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy)
-        {
-            return SearchPriorityErase(MaxDepth, MeBoard, EnemyBoard, Me, Enemy, setting.ScoreBoard);
-        }
 
-        Decided SearchPriorityErase(in int MaxDepth, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, in sbyte[,] ScoreBoard)
+        public  int MaxDepth { get; set; }
+
+        void SearchPriorityErase(int MaxDepth, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, in sbyte[,] ScoreBoard)
         {
-            Decided result = new Decided();
+            SolverResult = new Decided();
             int maxScore = 0;
             for (int i = 0; i < WayEnumerator.Length; ++i)
                 for (int m = 0; m < WayEnumerator.Length; ++m)
@@ -48,7 +46,7 @@ namespace AngryBee.AI
                         {
                             newEnBoard[newMe.Agent1] = false;
                             score += ScoreBoard[newMe.Agent1.Y, newMe.Agent1.X] * 2;
-                            Console.WriteLine("yobareta");
+                            //Console.WriteLine("yobareta");
                             newMe.Agent1 = Me.Agent1;
                         }
                         else
@@ -58,7 +56,7 @@ namespace AngryBee.AI
                         {
                             newEnBoard[newMe.Agent2] = false;
                             score += ScoreBoard[newMe.Agent2.Y, newMe.Agent2.X] * 2;
-                            Console.WriteLine("yobareta");
+                            //Console.WriteLine("yobareta");
                             newMe.Agent2 = Me.Agent2;
                         }
                         else
@@ -74,11 +72,10 @@ namespace AngryBee.AI
                     {
                         maxScore = score;
                         //Console.WriteLine("Max" + maxScore.ToString());
-                        result.MeAgent1 = WayEnumerator[i];
-                        result.MeAgent2 = WayEnumerator[m];
+                        SolverResult.MeAgent1 = WayEnumerator[i];
+                        SolverResult.MeAgent2 = WayEnumerator[m];
                     }
                 }
-            return result;
         }
 
         int Max(int depth, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, in sbyte[,] ScoreBoard)
@@ -191,5 +188,15 @@ namespace AngryBee.AI
             velocityPoint.Y = 0.CompareTo(velocityPoint.Y);
             return velocityPoint;
         }
+
+        protected override void EndGame(GameEnd end)
+        {
+        }
+
+        protected override void Solve()
+        {
+            SearchPriorityErase(MaxDepth, MyBoard, EnemyBoard, new Player(MyAgent1, MyAgent2), new Player(EnemyAgent1, EnemyAgent2), ScoreBoard);
+        }
+
     }
 }
