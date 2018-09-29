@@ -29,6 +29,7 @@ namespace AngryBee.AI
             for (int i = 0; i < WayEnumerator.Length; ++i)
                 for (int m = 0; m < WayEnumerator.Length; ++m)
                 {
+                    
                     Player newMe = Me;
                     newMe.Agent1 += WayEnumerator[i];
                     newMe.Agent2 += WayEnumerator[m];
@@ -68,6 +69,11 @@ namespace AngryBee.AI
                         newMeBoard[newMe.Agent2] = true;
                     }
                     score += Max(MaxDepth - 1, newMeBoard, newEnBoard, newMe, Enemy, ScoreBoard);
+                    if (CancellationToken.IsCancellationRequested)
+                    {
+                        Console.WriteLine("[SOLVER] Canceled");
+                        return;
+                    }
                     if (score > maxScore)
                     {
                         maxScore = score;
@@ -89,6 +95,8 @@ namespace AngryBee.AI
             for (int i = 0; i < WayEnumerator.Length; ++i)
                 for (int m = 0; m < WayEnumerator.Length; ++m)
                 {
+                    if (CancellationToken.IsCancellationRequested)
+                        return -1000;
                     int score = 0;
                     Player newMe = Me;
                     newMe.Agent1 += WayEnumerator[i];
@@ -107,7 +115,7 @@ namespace AngryBee.AI
                         {
                             newEnBoard[newMe.Agent1] = false;
                             score += ScoreBoard[newMe.Agent1.Y, newMe.Agent1.X] * 2;
-                            Console.WriteLine("yobareta");
+                            //Console.WriteLine("yobareta");
                             newMe.Agent1 = Me.Agent1;
                         }
                         else
@@ -117,7 +125,7 @@ namespace AngryBee.AI
                         {
                             newEnBoard[newMe.Agent2] = false;
                             score += ScoreBoard[newMe.Agent2.Y, newMe.Agent2.X] * 2;
-                            Console.WriteLine("yobareta");
+                            //Console.WriteLine("yobareta");
                             newMe.Agent2 = Me.Agent2;
                         }
                         else
