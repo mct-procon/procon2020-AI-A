@@ -10,8 +10,9 @@ namespace AngryBee
         static bool[] calledFlag;
         static Boards.BoardSetting board;
         static Point Me1, Me2, Enemy1, Enemy2;
-        static ColoredBoardSmallBigger MeBoard , EnemyBoard;
+        static ColoredBoardSmallBigger MeBoard, EnemyBoard;
         static int MeScore, EnemyScore;
+        static int WaitMiliSeconds;
         static object SyncRoot = new object();
 
         public Program()
@@ -27,7 +28,7 @@ namespace AngryBee
             {
                 for (uint x = 0; x < board.Width; ++x)
                 {
-                    if((x == Me1.X && y == Me1.Y) || (x == Me2.X && y == Me2.Y))
+                    if ((x == Me1.X && y == Me1.Y) || (x == Me2.X && y == Me2.Y))
                     {
                         Console.ForegroundColor = ConsoleColor.White;
                         Console.BackgroundColor = ConsoleColor.Red;
@@ -37,14 +38,13 @@ namespace AngryBee
                         Console.ForegroundColor = ConsoleColor.White;
                         Console.BackgroundColor = ConsoleColor.Blue;
                     }
-                    if (MeBoard[x,y])
+                    if (MeBoard[x, y])
                     {
                         Console.ForegroundColor = ConsoleColor.White;
                         Console.BackgroundColor = ConsoleColor.DarkRed;
                     }
                     else if (EnemyBoard[x, y])
                     {
-
                         Console.ForegroundColor = ConsoleColor.White;
                         Console.BackgroundColor = ConsoleColor.DarkBlue;
                     }
@@ -75,6 +75,7 @@ namespace AngryBee
             Me2 = init.MeAgent2;
             Enemy1 = init.EnemyAgent1;
             Enemy2 = init.EnemyAgent2;
+            WaitMiliSeconds = 4000; //1ターン目用
 
             MeBoard = new ColoredBoardSmallBigger();
             EnemyBoard = new ColoredBoardSmallBigger();
@@ -89,8 +90,7 @@ namespace AngryBee
             Me2 = turn.MeAgent2;
             Enemy1 = turn.EnemyAgent1;
             Enemy2 = turn.EnemyAgent2;
-
-            //TODO: Boads.ColoredBoardSmallBiggerへのキャスト
+            WaitMiliSeconds = turn.WaitMiliSeconds * 1000 - 800; //800ミリ秒余裕を持たせる
             MeBoard = turn.MeColoredBoard;
             EnemyBoard = turn.EnemyColoredBoard;
 
@@ -135,11 +135,13 @@ namespace AngryBee
         static void Main(string[] args)
         {
             Program program = new Program();
-            var ai = new AI.AI_PriorityErasing();
+            var ai_priorityErasing = new AI.AI_PriorityErasing();
+            var ai_iterative = new AI.AI_IterativePriSurround();
             int portId, maxDepth;
 
             Console.WriteLine("ポート番号を入力（先手15000, 後手15001)＞");
             portId = int.Parse(Console.ReadLine());
+            if (portId == 1) portId = 15000;
             Console.WriteLine("探索の深さの上限を入力（z深さ = ターン数 * 2, 5以下が目安）");
             maxDepth = int.Parse(Console.ReadLine());
 
@@ -162,11 +164,12 @@ namespace AngryBee
             while (true)
             {
                 int i;
-                for (i = 0; i < 7; i++) { if (calledFlag[i]) { break; } } 
+                for (i = 0; i < 7; i++) { if (calledFlag[i]) { break; } }
                 if (i == 1)
                 {
                     //TODO: ai.Beginの戻り値を「指し手」にする。
-                    var res = ai.Begin(maxDepth, board, MeBoard, EnemyBoard, new Boards.Player(Me1, Me2), new Boards.Player(Enemy1, Enemy2));
+                    //var res = ai_priorityErasing.Begin(maxDepth, board, MeBoard, EnemyBoard, new Boards.Player(Me1, Me2), new Boards.Player(Enemy1, Enemy2));
+                    var res = ai_iterative.Begin(WaitMiliSeconds, board, MeBoard, EnemyBoard, new Boards.Player(Me1, Me2), new Boards.Player(Enemy1, Enemy2));
                     manager.Write(DataKind.Decided, res);
                     lock (SyncRoot)
                     {
@@ -174,10 +177,10 @@ namespace AngryBee
                     }
                 }
                 if (i == 3) { break; }
-                if(i != 7)
+                if (i != 7)
                     calledFlag[i] = false;
             }
-            
+
             /*byte width = 12;
             byte height = 12;
 
