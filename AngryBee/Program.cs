@@ -4,8 +4,9 @@ using MCTProcon29Protocol.Methods;
 
 namespace AngryBee
 {
-    class Program : IIPCClientReader
+    public static class Program
     {
+<<<<<<< HEAD
         static IPCManager manager;
         static bool[] calledFlag;
         static Boards.BoardSetting board;
@@ -152,15 +153,23 @@ namespace AngryBee
                 proc.Dispose();
             }
             Console.WriteLine("Sended Connect Method.");
+=======
+        public static void Main(string[] args)
+        {
+
+            AI.AI_PriorityErasing Ai = new AI.AI_PriorityErasing();
+            int portId;
+>>>>>>> 6afad46a8eca0c9538b7e3c503bfd6ca46eefa08
 
             Console.CancelKeyPress +=
                 (o, e) =>
                 {
-                    manager.ShutdownServer();
+                    Ai?.End();
                     System.Threading.Thread.Sleep(1000);
                     Environment.Exit(0);
                 };
 
+<<<<<<< HEAD
             while (true)
             {
                 int i;
@@ -181,6 +190,15 @@ namespace AngryBee
                     calledFlag[i] = false;
             }
 
+=======
+            Console.WriteLine("ポート番号を入力（先手15000, 後手15001)＞");
+            portId = int.Parse(Console.ReadLine());
+            Console.WriteLine("探索の深さの上限を入力（深さ = ターン数 * 2, 5以下が目安）");
+            Ai.MaxDepth = int.Parse(Console.ReadLine());
+
+            Ai.StartSync(portId, true);
+
+>>>>>>> 6afad46a8eca0c9538b7e3c503bfd6ca46eefa08
             /*byte width = 12;
             byte height = 12;
 
