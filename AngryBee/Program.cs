@@ -6,199 +6,28 @@ namespace AngryBee
 {
     public static class Program
     {
-<<<<<<< HEAD
-        static IPCManager manager;
-        static bool[] calledFlag;
-        static Boards.BoardSetting board;
-        static Point Me1, Me2, Enemy1, Enemy2;
-        static ColoredBoardSmallBigger MeBoard, EnemyBoard;
-        static int MeScore, EnemyScore;
-        static int WaitMiliSeconds;
-        static object SyncRoot = new object();
-
-        public Program()
-        {
-            manager = new IPCManager(this);
-            calledFlag = new bool[7];
-            for (int i = 0; i < 7; i++) { calledFlag[i] = false; }
-        }
-
-        public static void DumpBoard()
-        {
-            for (uint y = 0; y < board.Height; ++y)
-            {
-                for (uint x = 0; x < board.Width; ++x)
-                {
-                    if ((x == Me1.X && y == Me1.Y) || (x == Me2.X && y == Me2.Y))
-                    {
-                        Console.ForegroundColor = ConsoleColor.White;
-                        Console.BackgroundColor = ConsoleColor.Red;
-                    }
-                    else if ((x == Enemy1.X && y == Enemy1.Y) || (x == Enemy2.X && y == Enemy2.Y))
-                    {
-                        Console.ForegroundColor = ConsoleColor.White;
-                        Console.BackgroundColor = ConsoleColor.Blue;
-                    }
-                    if (MeBoard[x, y])
-                    {
-                        Console.ForegroundColor = ConsoleColor.White;
-                        Console.BackgroundColor = ConsoleColor.DarkRed;
-                    }
-                    else if (EnemyBoard[x, y])
-                    {
-                        Console.ForegroundColor = ConsoleColor.White;
-                        Console.BackgroundColor = ConsoleColor.DarkBlue;
-                    }
-                    else if (((x + y) & 1) == 0)
-                    {
-                        Console.ForegroundColor = ConsoleColor.White;
-                        Console.BackgroundColor = ConsoleColor.Black;
-                    }
-                    else
-                    {
-                        Console.ForegroundColor = ConsoleColor.Black;
-                        Console.BackgroundColor = ConsoleColor.White;
-                    }
-                    string str = board.ScoreBoard[x, y].ToString();
-                    if (str.Length != 3)
-                        Console.Write(new string(' ', 3 - str.Length));
-                    Console.Write(str);
-                }
-                Console.WriteLine();
-            }
-        }
-
-        public void OnGameInit(GameInit init)
-        {
-            calledFlag[0] = true;
-            board = new Boards.BoardSetting(init.Board, init.BoardWidth, init.BoardHeight);
-            Me1 = init.MeAgent1;
-            Me2 = init.MeAgent2;
-            Enemy1 = init.EnemyAgent1;
-            Enemy2 = init.EnemyAgent2;
-            WaitMiliSeconds = 4000; //1ターン目用
-
-            MeBoard = new ColoredBoardSmallBigger();
-            EnemyBoard = new ColoredBoardSmallBigger();
-
-            Console.WriteLine("[IPC] GameInit Received.");
-        }
-
-        public void OnTurnStart(TurnStart turn)
-        {
-            calledFlag[1] = true;
-            Me1 = turn.MeAgent1;
-            Me2 = turn.MeAgent2;
-            Enemy1 = turn.EnemyAgent1;
-            Enemy2 = turn.EnemyAgent2;
-            WaitMiliSeconds = turn.WaitMiliSeconds * 1000 - 800; //800ミリ秒余裕を持たせる
-            MeBoard = turn.MeColoredBoard;
-            EnemyBoard = turn.EnemyColoredBoard;
-
-            lock (SyncRoot)
-            {
-                DumpBoard();
-            }
-
-            Console.WriteLine("[IPC] TurnStart Received. Turn is " + turn.Turn.ToString());
-        }
-
-        public void OnTurnEnd(TurnEnd turn)
-        {
-            calledFlag[2] = true;
-
-            Console.WriteLine("[IPC] TurnEnd Received.");
-        }
-
-        public void OnGameEnd(GameEnd end)
-        {
-            calledFlag[3] = true;
-            MeScore = end.MeScore;
-            EnemyScore = end.EnemyScore;
-            Console.WriteLine("[IPC] GameEnd Received.");
-        }
-
-        public void OnPause(Pause pause)
-        {
-            calledFlag[4] = true;
-        }
-
-        public void OnInterrupt(Interrupt interrupt)
-        {
-            calledFlag[5] = true;
-        }
-
-        public void OnRebaseByUser(RebaseByUser rebase)
-        {
-            calledFlag[6] = true;
-        }
-
-        static void Main(string[] args)
-        {
-            Program program = new Program();
-            var ai_priorityErasing = new AI.AI_PriorityErasing();
-            var ai_iterative = new AI.AI_IterativePriSurround();
-            int portId, maxDepth;
-
-            Console.WriteLine("ポート番号を入力（先手15000, 後手15001)＞");
-            portId = int.Parse(Console.ReadLine());
-            if (portId == 1) portId = 15000;
-            Console.WriteLine("探索の深さの上限を入力（z深さ = ターン数 * 2, 5以下が目安）");
-            maxDepth = int.Parse(Console.ReadLine());
-
-            manager.Start(portId);
-            {
-                var proc = System.Diagnostics.Process.GetCurrentProcess();
-                manager.Write(DataKind.Connect, new Connect(ProgramKind.AI) { ProcessId = proc.Id });
-                proc.Dispose();
-            }
-            Console.WriteLine("Sended Connect Method.");
-=======
         public static void Main(string[] args)
         {
 
             AI.AI_PriorityErasing Ai = new AI.AI_PriorityErasing();
+            AI.AI_IterativePriSurround AiP = new AI.AI_IterativePriSurround();
             int portId;
->>>>>>> 6afad46a8eca0c9538b7e3c503bfd6ca46eefa08
 
             Console.CancelKeyPress +=
                 (o, e) =>
                 {
-                    Ai?.End();
+                    AiP?.End();
                     System.Threading.Thread.Sleep(1000);
                     Environment.Exit(0);
                 };
 
-<<<<<<< HEAD
-            while (true)
-            {
-                int i;
-                for (i = 0; i < 7; i++) { if (calledFlag[i]) { break; } }
-                if (i == 1)
-                {
-                    //TODO: ai.Beginの戻り値を「指し手」にする。
-                    //var res = ai_priorityErasing.Begin(maxDepth, board, MeBoard, EnemyBoard, new Boards.Player(Me1, Me2), new Boards.Player(Enemy1, Enemy2));
-                    var res = ai_iterative.Begin(WaitMiliSeconds, board, MeBoard, EnemyBoard, new Boards.Player(Me1, Me2), new Boards.Player(Enemy1, Enemy2));
-                    manager.Write(DataKind.Decided, res);
-                    lock (SyncRoot)
-                    {
-                        Console.WriteLine($"{res.MeAgent1.X}, {res.MeAgent1.Y}   {res.MeAgent2.X}, {res.MeAgent2.Y}");
-                    }
-                }
-                if (i == 3) { break; }
-                if (i != 7)
-                    calledFlag[i] = false;
-            }
-
-=======
             Console.WriteLine("ポート番号を入力（先手15000, 後手15001)＞");
             portId = int.Parse(Console.ReadLine());
+            if (portId == 1) portId = 15000;
             Console.WriteLine("探索の深さの上限を入力（深さ = ターン数 * 2, 5以下が目安）");
             Ai.MaxDepth = int.Parse(Console.ReadLine());
 
             Ai.StartSync(portId, true);
-
->>>>>>> 6afad46a8eca0c9538b7e3c503bfd6ca46eefa08
             /*byte width = 12;
             byte height = 12;
 
