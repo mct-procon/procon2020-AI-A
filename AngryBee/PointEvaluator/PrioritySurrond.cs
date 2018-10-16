@@ -29,9 +29,10 @@ namespace AngryBee.PointEvaluator
                     }
                 }
 
+            result += CountSurrounded(checker, width, height) * 50;
+
             BadSpaceFill(ref checker, width, height);
 
-            result += CountSurrounded(checker, width, height) * 100;
             for (uint x = 0; x < width; ++x)
                 for (uint y = 0; y < height; ++y)
                     if (!checker[x, y])
@@ -131,21 +132,24 @@ namespace AngryBee.PointEvaluator
                 {
                     if (!Checker[x, y])
                     {
-                        count++;
-                        FillChecker(ref Checker, x, y);
+                        if (FillChecker(ref Checker, x, y, width, height)) count++;
                     }
                 }
             }
+            Console.WriteLine(count.ToString());
             return count;
         }
 
-        void FillChecker(ref ColoredBoardSmallBigger Checker, uint x, uint y)
+        bool FillChecker(ref ColoredBoardSmallBigger Checker, uint x, uint y, in uint Width, in uint Height)
         {
-            if (Checker[x, y]) return;
+            if (x < 0 || x >= Width || y < 0 || y >= Height) return false;
+            if (Checker[x, y]) return true;
             Checker[x, y] = true;
             for (int i = 0; i < 4; i++)
-                FillChecker(ref Checker, (uint)(x + DistanceX[i]), (uint)(y + DistanceY[i]));
-
+            {
+                if (!FillChecker(ref Checker, (uint)(x + DistanceX[i]), (uint)(y + DistanceY[i]), Width, Height)) return false;
+            }
+            return true;
         }
     }
 }

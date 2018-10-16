@@ -15,7 +15,7 @@ namespace AngryBee.AI
     {
         Rule.MovableChecker Checker = new Rule.MovableChecker();
         PointEvaluator.Normal PointEvaluator = new PointEvaluator.Normal();
-        PointEvaluator.PrioritySurrond PointEvaluatorPriS = new PointEvaluator.PrioritySurrond();
+        PointEvaluator.PrioritySurrond PointEvaluatorPriSurround = new PointEvaluator.PrioritySurrond();
 
         private class DP
         {
@@ -49,7 +49,6 @@ namespace AngryBee.AI
                 }
                 else break;
             }
-            Console.WriteLine("a");
             SolverResult = BestWay;
         }
 
@@ -59,7 +58,7 @@ namespace AngryBee.AI
 
             if (deepness == 0)
             {
-                return PointEvaluator.Calculate(ScoreBoard, MeBoard, 0) - PointEvaluator.Calculate(ScoreBoard, EnemyBoard, 0);
+                return PointEvaluatorPriSurround.Calculate(ScoreBoard, MeBoard, 0) - PointEvaluator.Calculate(ScoreBoard, EnemyBoard, 0);
             }
 
             int result = alpha;
@@ -76,7 +75,7 @@ namespace AngryBee.AI
                     var newEnBoard = moveResult.Item2;
                     newMe = moveResult.Item3;
                     var newEnemy = moveResult.Item4;
-                    result = Mini(deepness, WayEnumerator, newMeBoard, EnemyBoard, newMe, Enemy, result, beta, ScoreBoard);
+                    result = Max(deepness - 1, WayEnumerator, newMeBoard, EnemyBoard, newMe, Enemy, result, beta, ScoreBoard);
                 }
 
             }
@@ -99,14 +98,13 @@ namespace AngryBee.AI
                     newMe = moveResult.Item3;
                     var newEnemy = moveResult.Item4;
 
-                    cache = Mini(deepness, WayEnumerator, newMeBoard, newEnBoard, newMe, newEnemy, result, beta, ScoreBoard);
+                    cache = Max(deepness - 1, WayEnumerator, newMeBoard, newEnBoard, newMe, newEnemy, result, beta, ScoreBoard);
 
                     if (result < cache)
                     {
                         result = Math.Max(result, cache);
                         if (deepness == this.deepness)
                         {
-                            Console.WriteLine("i=" + i.ToString() + ",m=" + m.ToString());
                             dp[deepness].score = result;
                             dp[deepness].Ag1Way = WayEnumerator[i];
                             dp[deepness].Ag2Way = WayEnumerator[m];

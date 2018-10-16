@@ -9,14 +9,14 @@ namespace AngryBee
         public static void Main(string[] args)
         {
 
-            AI.AI_PriorityErasing Ai = new AI.AI_PriorityErasing();
-            AI.AI_IterativePriSurround AiP = new AI.AI_IterativePriSurround();
+            AI.AI_PriorityErasing Ai_PriorityErasing = new AI.AI_PriorityErasing();
+            AI.AI_IterativePriSurround Ai_IterativePriSurround = new AI.AI_IterativePriSurround();
             int portId;
 
             Console.CancelKeyPress +=
                 (o, e) =>
                 {
-                    AiP?.End();
+                    Ai_IterativePriSurround?.End();
                     System.Threading.Thread.Sleep(1000);
                     Environment.Exit(0);
                 };
@@ -24,10 +24,10 @@ namespace AngryBee
             Console.WriteLine("ポート番号を入力（先手15000, 後手15001)＞");
             portId = int.Parse(Console.ReadLine());
             if (portId == 1) portId = 15000;
-            Console.WriteLine("探索の深さの上限を入力（深さ = ターン数 * 2, 5以下が目安）");
-            Ai.MaxDepth = int.Parse(Console.ReadLine());
+            //Console.WriteLine("探索の深さの上限を入力（深さ = ターン数 * 2, 5以下が目安）");
+            //Ai_PriorityErasing.MaxDepth = int.Parse(Console.ReadLine());
 
-            Ai.StartSync(portId, true);
+            Ai_IterativePriSurround.StartSync(portId, true);
             /*byte width = 12;
             byte height = 12;
 
