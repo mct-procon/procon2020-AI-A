@@ -8,7 +8,7 @@ namespace AngryBee.PointEvaluator
 
     class Dispersion : Base
     {
-        const float DispersionRate = 0.5f;
+        const float DispersionRate = 0.6f;
         private struct PointFloat
         {
             public float x;
@@ -66,7 +66,7 @@ namespace AngryBee.PointEvaluator
                         rec += tmp * tmp;
                     }
                 }
-            rec /= checkedCount * DispersionRate;
+            rec = rec / checkedCount * DispersionRate;
             return (int)rec + result;
         }
         //uint[] myStack = new uint[1024];	//x, yの順で入れる. y, xの順で取り出す. width * height以上のサイズにする.
