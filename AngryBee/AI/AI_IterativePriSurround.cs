@@ -67,7 +67,7 @@ namespace AngryBee.AI
                 Player newMe = Me;
                 newMe.Agent1 += dp[deepness].Ag1Way;
                 newMe.Agent2 += dp[deepness].Ag2Way;
-                var moveResult = Move(MeBoard, EnemyBoard, newMe, Enemy);
+                var moveResult = Move(MeBoard, EnemyBoard, Me, newMe, Enemy);
 
                 if (moveResult != null)
                 {
@@ -88,7 +88,7 @@ namespace AngryBee.AI
                     newMe.Agent1 += WayEnumerator[i];
                     newMe.Agent2 += WayEnumerator[m];
 
-                    var moveResult = Move(MeBoard, EnemyBoard, newMe, Enemy);
+                    var moveResult = Move(MeBoard, EnemyBoard, Me, newMe, Enemy);
 
                     if (moveResult == null) continue;
 
@@ -140,7 +140,7 @@ namespace AngryBee.AI
                     newEnemy.Agent1 += WayEnumerator[i];
                     newEnemy.Agent2 += WayEnumerator[m];
 
-                    var moveResult = Move(EnemyBoard, MeBoard, newEnemy, Me);
+                    var moveResult = Move(EnemyBoard, MeBoard, Enemy, newEnemy, Me);
 
                     if (moveResult == null) continue;
 
@@ -164,9 +164,9 @@ namespace AngryBee.AI
             return result;
         }
 
-        Tuple<ColoredBoardSmallBigger, ColoredBoardSmallBigger, Player, Player> Move(ColoredBoardSmallBigger meBoard, ColoredBoardSmallBigger enemyBoard, Player me, Player enemy)
+        Tuple<ColoredBoardSmallBigger, ColoredBoardSmallBigger, Player, Player> Move(ColoredBoardSmallBigger meBoard, ColoredBoardSmallBigger enemyBoard, Player me, Player newme, Player enemy)
         {
-            var movable = Checker.MovableCheck(meBoard, enemyBoard, me, enemy);
+            var movable = Checker.MovableCheck(meBoard, enemyBoard, me, newme, enemy);
 
             if (!movable.IsMovable) return null;
 

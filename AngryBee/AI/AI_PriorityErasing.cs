@@ -34,7 +34,7 @@ namespace AngryBee.AI
                     newMe.Agent1 += WayEnumerator[i];
                     newMe.Agent2 += WayEnumerator[m];
 
-                    var movable = Checker.MovableCheck(MeBoard, EnemyBoard, newMe, Enemy);
+                    var movable = Checker.MovableCheck(MeBoard, EnemyBoard, Me, newMe, Enemy);
 
                     if (!movable.IsMovable) continue;
 
@@ -102,7 +102,7 @@ namespace AngryBee.AI
                     newMe.Agent1 += WayEnumerator[i];
                     newMe.Agent2 += WayEnumerator[m];
 
-                    var movable = Checker.MovableCheck(MeBoard, EnemyBoard, newMe, Enemy);
+                    var movable = Checker.MovableCheck(MeBoard, EnemyBoard, Me, newMe, Enemy);
 
                     if (!movable.IsMovable) continue;
 

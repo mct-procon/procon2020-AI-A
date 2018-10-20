@@ -9,7 +9,7 @@ namespace AngryBee
         public static void Main(string[] args)
         {
 
-            MCTProcon29Protocol.AIFramework.AIBase AI = new AI.NaottiAI();
+            MCTProcon29Protocol.AIFramework.AIBase AI = new AI.AI_IterativePriSurround();
             int portId;
 
             Console.CancelKeyPress +=
