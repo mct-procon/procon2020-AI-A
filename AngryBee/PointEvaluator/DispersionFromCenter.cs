@@ -5,8 +5,8 @@ using MCTProcon29Protocol;
 
 namespace AngryBee.PointEvaluator
 {
-    //塗られているマスの重心を用いて、分散を計算する。
-    class Dispersion : Base
+    //フィールドの中心を重心とし、分散を計算する。
+    class DispersionFromCenter : Base
     {
         const float DispersionRate = 0.5f;
         private struct PointFloat
@@ -45,7 +45,7 @@ namespace AngryBee.PointEvaluator
             float rec = 0;
             int checkedCount = 0;
             Point sum = new Point();
-            PointFloat average;
+            PointFloat center = new PointFloat((width - 1) / 2f, (height - 1) / 2f);
             for (uint x = 0; x < width; ++x)
                 for (uint y = 0; y < height; ++y)
                 {
@@ -55,14 +55,13 @@ namespace AngryBee.PointEvaluator
                         sum += (x, y);
                     }
                 }
-            average = new PointFloat((float)sum.X / checkedCount, (float)sum.Y / checkedCount);
 
             for (uint x = 0; x < width; ++x)
                 for (uint y = 0; y < height; ++y)
                 {
                     if (Painted[x, y])
                     {
-                        float tmp = Math.Abs((average.x - x)) + Math.Abs((average.y - y));
+                        float tmp = Math.Abs((center.x - x)) + Math.Abs((center.y - y));
                         rec += tmp * tmp;
                     }
                 }
