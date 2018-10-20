@@ -9,15 +9,13 @@ namespace AngryBee
         public static void Main(string[] args)
         {
 
-            AI.AI_PriorityErasing Ai_PriorityErasing = new AI.AI_PriorityErasing();
-            AI.AI_IterativePriSurround Ai_IterativePriSurround = new AI.AI_IterativePriSurround();
+            MCTProcon29Protocol.AIFramework.AIBase AI = new AI.NaottiAI();
             int portId;
 
             Console.CancelKeyPress +=
                 (o, e) =>
                 {
-                    Ai_IterativePriSurround?.End();
-                    System.Threading.Thread.Sleep(1000);
+                    AI?.End();
                     Environment.Exit(0);
                 };
 
@@ -27,7 +25,7 @@ namespace AngryBee
             //Console.WriteLine("探索の深さの上限を入力（深さ = ターン数 * 2, 5以下が目安）");
             //Ai_PriorityErasing.MaxDepth = int.Parse(Console.ReadLine());
 
-            Ai_IterativePriSurround.StartSync(portId, true);
+            AI.StartSync(portId, true);
             /*byte width = 12;
             byte height = 12;
 

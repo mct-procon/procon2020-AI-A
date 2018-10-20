@@ -1,146 +1,343 @@
-﻿//using AngryBee.Boards;
-//using System;
-//using System.Collections.Generic;
-//using System.Text;
+﻿using AngryBee.Boards;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using MCTProcon29Protocol.Methods;
+using MCTProcon29Protocol;
 
-//namespace AngryBee.AI
-//{
-//    public class NaottiAI
-//    {
-//        Rule.MovableChecker Checker = new Rule.MovableChecker();
-//        PointEvaluator.Normal PointEvaluator = new PointEvaluator.Normal();
+namespace AngryBee.AI
+{
+    public class NaottiAI : MCTProcon29Protocol.AIFramework.AIBase
+    {
+        Rule.MovableChecker Checker = new Rule.MovableChecker();
+        PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
+        PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
 
-//        public int ends = 0;
+        VelocityPoint[] WayEnumerator = { (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1) };
 
-//        public Player BestWay { get; set; }
+        private struct DP
+        {
+            public int Score;
+            public VelocityPoint Agent1Way;
+            public VelocityPoint Agent2Way;
 
-//        public Tuple<int, ColoredBoardSmallBigger, ColoredBoardSmallBigger> Begin(int deepness, BoardSetting setting, ColoredBoardSmallBigger MeBoard, ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy)
-//        {
-//            (int DestX, int DestY)[] WayEnumerator = { (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1) };
-//            return Max(deepness, WayEnumerator, MeBoard, EnemyBoard, Me, Enemy, int.MinValue, int.MaxValue, setting.ScoreBoard);
-//        }
+            public void UpdateScore(int score, VelocityPoint a1, VelocityPoint a2)
+            {
+                if (Score < score)
+                {
+                    Agent1Way = a1;
+                    Agent2Way = a2;
+                }
+            }
+        }
+        private DP[] dp = new DP[50];
 
-//        public Tuple<int, ColoredBoardSmallBigger, ColoredBoardSmallBigger> Max(int deepness, in (int DestX, int DestY)[] WayEnumerator, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, int alpha, int beta, in sbyte[,] ScoreBoard)
-//        {
-//            if (deepness == 0)
-//            {
-//                ends++;
-//                return Tuple.Create(PointEvaluator.Calculate(ScoreBoard, MeBoard, 0) - PointEvaluator.Calculate(ScoreBoard, EnemyBoard, 0), MeBoard, EnemyBoard);
-//            }
+        //public int ends = 0;
 
-//            Tuple<int, ColoredBoardSmallBigger, ColoredBoardSmallBigger> result = Tuple.Create(alpha, new ColoredBoardSmallBigger(), new ColoredBoardSmallBigger());
-//            for (int i = 0; i < WayEnumerator.Length; ++i)
-//                for (int m = 0; m < WayEnumerator.Length; ++m)
-//                {
-//                    if (WayEnumerator[i] == WayEnumerator[m])
-//                        continue;
+        public int StartDepth { get; set; } = 1;
 
-//                    Player newMe = Me;
-//                    newMe.Agent1 += WayEnumerator[i];
-//                    newMe.Agent2 += WayEnumerator[m];
+        public NaottiAI(int startDepth = 1)
+        {
+            for (int i = 0; i < 50; ++i)
+                dp[i] = new DP();
+            StartDepth = startDepth;
+        }
 
-//                    var movable = Checker.MovableCheck(MeBoard, EnemyBoard, newMe, Enemy);
+        //1ターン = 深さ2
+        protected override void Solve()
+        {
+            for (int i = 0; i < 50; ++i)
+                dp[i].Score = int.MinValue;
+            int deepness = StartDepth;
+            int maxDepth = (TurnCount - CurrentTurn) * 2;
+            PointEvaluator.Base evaluer = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
+            for (; deepness < maxDepth ; deepness++)
+            {
+                var tmp = SolveSub(deepness, evaluer);
+                if (CancellationToken.IsCancellationRequested == false)
+                    SolverResult = tmp;
+                else
+                    break;
+                Log("[SOLVER] deepness = {0}", deepness);
+            }
+        }
 
-//                    if (!movable.IsMovable) continue;
+        private Decided SolveSub(int deepness, PointEvaluator.Base evaluer)
+        {
+            int alpha = int.MinValue + 1;
+            int beta = int.MaxValue;
+            int result = int.MinValue;
 
-//                    Tuple<int, ColoredBoardSmallBigger, ColoredBoardSmallBigger> cache = null;
-//                    var newMeBoard = MeBoard;
+            Player Killer = new Player(new Point(114, 114), new Point(114, 114));
+            var nextMe = MoveOrderling(ScoreBoard, MyBoard, EnemyBoard, new Player(MyAgent1, MyAgent2), new Player(EnemyAgent1, EnemyAgent2), 0);
 
-//                    if (movable.IsEraseNeeded)
-//                    {
-//                        var newEnBoard = EnemyBoard;
+            Decided returnValue = null;
 
-//                        if (movable.Me1 == Rule.MovableResultType.EraseNeeded)
-//                        {
-//                            newEnBoard[newMe.Agent1] = false;
-//                            newMe.Agent1 = Me.Agent1;
-//                        }
-//                        else
-//                            newMeBoard[newMe.Agent1] = true;
+            Player Me = new Player(MyAgent1, MyAgent2);
 
-//                        if (movable.Me2 == Rule.MovableResultType.EraseNeeded)
-//                        {
-//                            newEnBoard[newMe.Agent2] = false;
-//                            newMe.Agent2 = Me.Agent2;
-//                        }
-//                        else
-//                            newMeBoard[newMe.Agent2] = true;
-//                        cache = Mini(deepness, WayEnumerator, newMeBoard, newEnBoard, newMe, Enemy, result.Item1, beta, ScoreBoard);
-//                    }
-//                    else
-//                    {
-//                        newMeBoard[newMe.Agent1] = true;
-//                        newMeBoard[newMe.Agent2] = true;
-//                        cache = Mini(deepness, WayEnumerator, newMeBoard, EnemyBoard, newMe, Enemy, result.Item1, beta, ScoreBoard);
-//                    }
+            for (int i = 0; i < nextMe.Count; i++)
+            {
+                var nextMeValue = nextMe[i].Value;
+                Player newMe = Me;
+                newMe.Agent1 += nextMeValue.Agent1;
+                newMe.Agent2 += nextMeValue.Agent2;
 
-//                    if (result.Item1 < cache.Item1)
-//                        result = cache;
-//                    if (result.Item1 >= beta)
-//                        return result;
-//                }
-//            return result;
-//        }
+                var movable = Checker.MovableCheck(MyBoard, EnemyBoard, Me, newMe, new Player(EnemyAgent1, EnemyAgent2));
 
-//        public Tuple<int, ColoredBoardSmallBigger, ColoredBoardSmallBigger> Mini(int deepness, in (int DestX, int DestY)[] WayEnumerator, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, int alpha, int beta, in sbyte[,] ScoreBoard)
-//        {
-//            deepness--;
+                if (!movable.IsMovable) continue;
 
-//            Tuple<int, ColoredBoardSmallBigger, ColoredBoardSmallBigger> result = Tuple.Create(beta, new ColoredBoardSmallBigger(), new ColoredBoardSmallBigger());
-//            for (int i = 0; i < WayEnumerator.Length; ++i)
-//                for (int m = 0; m < WayEnumerator.Length; ++m)
-//                {
-//                    if (WayEnumerator[i] == WayEnumerator[m])
-//                        continue;
+                int current = 0;
+                var newMeBoard = MyBoard;
 
-//                    Player newEnemy = Enemy;
-//                    newEnemy.Agent1 += WayEnumerator[i];
-//                    newEnemy.Agent2 += WayEnumerator[m];
+                if (movable.IsEraseNeeded)
+                {
+                    var newEnBoard = EnemyBoard;
 
-//                    var movable = Checker.MovableCheck(EnemyBoard, MeBoard, newEnemy, Me);
+                    if (movable.Me1 == Rule.MovableResultType.EraseNeeded)
+                    {
+                        newEnBoard[newMe.Agent1] = false;
+                        newMe.Agent1 = MyAgent1;
+                    }
+                    else
+                        newMeBoard[newMe.Agent1] = true;
 
-//                    if (!movable.IsMovable) continue;
+                    if (movable.Me2 == Rule.MovableResultType.EraseNeeded)
+                    {
+                        newEnBoard[newMe.Agent2] = false;
+                        newMe.Agent2 = MyAgent2;
+                    }
+                    else
+                        newMeBoard[newMe.Agent2] = true;
 
-//                    Tuple<int, ColoredBoardSmallBigger, ColoredBoardSmallBigger> cache = null;
-//                    var newEnBoard = EnemyBoard;
+                    current = Mini(deepness - 1, ScoreBoard, newMeBoard, newEnBoard, newMe, new Player(EnemyAgent1, EnemyAgent2), Math.Max(result, alpha), beta, 1, evaluer);
+                }
+                else
+                {
+                    newMeBoard[newMe.Agent1] = true;
+                    newMeBoard[newMe.Agent2] = true;
+                    current = Mini(deepness - 1, ScoreBoard, newMeBoard, EnemyBoard, newMe, new Player(EnemyAgent1, EnemyAgent2), Math.Max(result, alpha), beta, 1, evaluer);
+                }
 
-//                    if (movable.IsEraseNeeded)
-//                    {
-//                        var newMeBoard = MeBoard;
+                if (result < current)
+                {
+                    result = current;
+                    dp[0].UpdateScore(result, nextMeValue.Agent1, nextMeValue.Agent2);
+                    returnValue = new Decided(nextMeValue.Agent1, nextMeValue.Agent2);
+                }
+                if (result >= beta)
+                {
+                    return returnValue;
+                }
+            }
+            return returnValue;
+        }
 
-//                        if (movable.Me1 == Rule.MovableResultType.EraseNeeded)
-//                        {
-//                            newMeBoard[newEnemy.Agent1] = false;
-//                            newEnemy.Agent1 = Enemy.Agent1;
-//                        }
-//                        else
-//                            newEnBoard[newEnemy.Agent1] = true;
+        //Meが動く
+        public int Max(int deepness, sbyte[,] ScoreBoard, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, int alpha, int beta, int count, PointEvaluator.Base evaluer)
+        {
+            if (deepness == 0)
+            {
+                //ends++;
+                return evaluer.Calculate(ScoreBoard, MeBoard, 0) - evaluer.Calculate(ScoreBoard, EnemyBoard, 0);
+            }
 
-//                        if (movable.Me2 == Rule.MovableResultType.EraseNeeded)
-//                        {
-//                            newMeBoard[newEnemy.Agent2] = false;
-//                            newEnemy.Agent2 = Enemy.Agent2;
-//                        }
-//                        else
-//                            newEnBoard[newEnemy.Agent2] = true;
+            int result = int.MinValue;
+
+            Player Killer = new Player(new Point(114, 114), new Point(114, 114));
+            var nextMe = MoveOrderling(ScoreBoard, MeBoard, EnemyBoard, Me, Enemy, count);
+
+            for (int i = 0; i < nextMe.Count; i++)
+            {
+                if (CancellationToken.IsCancellationRequested) { break; }
+
+                var nextMeValue = nextMe[i].Value;
+                Player newMe = Me;
+                newMe.Agent1 += nextMeValue.Agent1;
+                newMe.Agent2 += nextMeValue.Agent2;
+
+                var movable = Checker.MovableCheck(MeBoard, EnemyBoard, Me, newMe, Enemy);
+
+                if (!movable.IsMovable) continue;
+
+                int current = 0;
+                var newMeBoard = MeBoard;
+
+                if (movable.IsEraseNeeded)
+                {
+                    var newEnBoard = EnemyBoard;
+
+                    if (movable.Me1 == Rule.MovableResultType.EraseNeeded)
+                    {
+                        newEnBoard[newMe.Agent1] = false;
+                        newMe.Agent1 = Me.Agent1;
+                    }
+                    else
+                        newMeBoard[newMe.Agent1] = true;
+
+                    if (movable.Me2 == Rule.MovableResultType.EraseNeeded)
+                    {
+                        newEnBoard[newMe.Agent2] = false;
+                        newMe.Agent2 = Me.Agent2;
+                    }
+                    else
+                        newMeBoard[newMe.Agent2] = true;
+
+                    current = Mini(deepness - 1, ScoreBoard, newMeBoard, newEnBoard, newMe, Enemy, Math.Max(result, alpha), beta, count + 1, evaluer);
+                }
+                else
+                {
+                    newMeBoard[newMe.Agent1] = true;
+                    newMeBoard[newMe.Agent2] = true;
+                    current = Mini(deepness - 1, ScoreBoard, newMeBoard, EnemyBoard, newMe, Enemy, Math.Max(result, alpha), beta, count + 1, evaluer);
+                }
+
+                if (result < current)
+                {
+                    result = current;
+                    dp[count].UpdateScore(result, nextMeValue.Agent1, nextMeValue.Agent2);
+                }
+                if (result >= beta)
+                {
+                    return result;
+                }
+            }
+
+            return result;
+        }
+
+        //Enemyが動く
+        public int Mini(int deepness, sbyte[,] ScoreBoard, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, int alpha, int beta, int count, PointEvaluator.Base evaluer)
+        {
+            if (deepness == 0)
+            {
+                //ends++;
+                return evaluer.Calculate(ScoreBoard, MeBoard, 0) - evaluer.Calculate(ScoreBoard, EnemyBoard, 0);
+            }
+
+            int result = int.MaxValue;
+
+            Player Killer = new Player(new Point(114, 114), new Point(114, 114));
+            var nextEnemy = MoveOrderling(ScoreBoard, EnemyBoard, MeBoard, Enemy, Me, count);
+
+            for (int i = 0; i < nextEnemy.Count; i++)
+            {
+                if (CancellationToken.IsCancellationRequested) { break; }
+
+                var nextEnemyValue = nextEnemy[i].Value;
+                Player newEnemy = Enemy;
+                newEnemy.Agent1 += nextEnemyValue.Agent1;
+                newEnemy.Agent2 += nextEnemyValue.Agent2;
+
+                var movable = Checker.MovableCheck(EnemyBoard, MeBoard, Enemy, newEnemy, Me);
+
+                if (!movable.IsMovable) continue;
+
+                int current = 0;
+                var newEnBoard = EnemyBoard;
+
+                if (movable.IsEraseNeeded)
+                {
+                    var newMeBoard = MeBoard;
+
+                    if (movable.Me1 == Rule.MovableResultType.EraseNeeded)
+                    {
+                        newMeBoard[newEnemy.Agent1] = false;
+                        newEnemy.Agent1 = Enemy.Agent1;
+                    }
+                    else
+                        newEnBoard[newEnemy.Agent1] = true;
+
+                    if (movable.Me2 == Rule.MovableResultType.EraseNeeded)
+                    {
+                        newMeBoard[newEnemy.Agent2] = false;
+                        newEnemy.Agent2 = Enemy.Agent2;
+                    }
+                    else
+                        newEnBoard[newEnemy.Agent2] = true;
 
 
-//                        cache = Max(deepness, WayEnumerator, newMeBoard, newEnBoard, Me, newEnemy, alpha, result.Item1, ScoreBoard);
-//                    }
-//                    else
-//                    {
-//                        newEnBoard[newEnemy.Agent1] = true;
-//                        newEnBoard[newEnemy.Agent2] = true;
-//                        cache = Max(deepness, WayEnumerator, MeBoard, newEnBoard, Me, newEnemy, alpha, result.Item1, ScoreBoard);
-//                    }
+                    current = Max(deepness - 1, ScoreBoard, newMeBoard, newEnBoard, Me, newEnemy, alpha, Math.Min(result, beta), count + 1, evaluer);
+                }
+                else
+                {
+                    newEnBoard[newEnemy.Agent1] = true;
+                    newEnBoard[newEnemy.Agent2] = true;
+                    current = Max(deepness - 1, ScoreBoard, MeBoard, newEnBoard, Me, newEnemy, alpha, Math.Min(result, beta), count + 1, evaluer);
+                }
 
-//                    if (result.Item1 > cache.Item1)
-//                        result = cache;
-//                    if (result.Item1 <= alpha)
-//                        return result;
-//                }
+                if (result > current)
+                {
+                    result = current;
+                    dp[count].UpdateScore(-result, nextEnemyValue.Agent1, nextEnemyValue.Agent2);
+                }
+                if (result <= alpha)
+                    return result;
+            }
 
-//            return result;
-//        }
-//    }
-//}
+            return result;
+        }
+
+        //遷移順を決める.  「この関数においては」MeBoard…手番プレイヤのボード, Me…手番プレイヤ、とします。
+        //(この関数におけるMeは、Maxi関数におけるMe, Mini関数におけるEnemyです）
+        //newMe[0]が最初に探索したい行き先、nextMe[1]が次に探索したい行き先…として、nextMeに「次の行き先」を入れていきます。
+        //以下のルールで優先順を決めます。
+        //ルール1. Killer手があれば、それを優先する。(Killer手がなければ、Killer.Agent1 = (514, 514), Killer.Agent2 = (514, 514)のように範囲外の移動先を設定すること。)
+        //ルール2. 次のmoveで得られる「タイルポイント」の合計値、が大きい移動(の組み合わせ)を優先する。
+        //なお、ルールはMovableChecker.csに準ずるため、現在は、「タイル除去先にもう一方のエージェントが移動することはできない」として計算しています。
+        private List<KeyValuePair<int, (VelocityPoint Agent1, VelocityPoint Agent2)>> MoveOrderling(sbyte[,] ScoreBoard, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, int deep)
+        {
+            uint width = MeBoard.Width;
+            uint height = MeBoard.Height;
+            List<KeyValuePair<int, (VelocityPoint, VelocityPoint)>> orderling = new List<KeyValuePair<int, (VelocityPoint, VelocityPoint)>>();
+
+            var Killer = dp[deep].Score == int.MinValue ? new Player(new Point(114, 514), new Point(114, 514)) : new Player(Me.Agent1 + dp[deep].Agent1Way, Me.Agent2 + dp[deep].Agent2Way);
+
+            for (int i = 0; i < WayEnumerator.Length; i++)
+            {
+                for (int m = 0; m < WayEnumerator.Length; m++)
+                {
+                    Player newMe = Me;
+                    newMe.Agent1 += WayEnumerator[i];
+                    newMe.Agent2 += WayEnumerator[m];
+
+                    int score = 0;  //優先度 (小さいほど優先度が高い）
+                    if (newMe.Agent1 == Killer.Agent1 && newMe.Agent2 == Killer.Agent2) score = -100;
+                    else if (newMe.Agent1.X >= width || newMe.Agent1.Y >= height) score = 100;
+                    else if (newMe.Agent2.X >= width || newMe.Agent2.Y >= height) score = 100;
+                    else if (newMe.Agent1 == newMe.Agent2) score = 100;
+                    else if (newMe.Agent1 == Enemy.Agent1) score = 100;
+                    else if (newMe.Agent1 == Enemy.Agent2) score = 100;
+                    else if (newMe.Agent2 == Enemy.Agent1) score = 100;
+                    else if (newMe.Agent2 == Enemy.Agent2) score = 100;
+                    else
+                    {
+                        if (!MeBoard[newMe.Agent1.X, newMe.Agent1.Y] && !EnemyBoard[newMe.Agent1.X, newMe.Agent1.Y])
+                        {
+                            score += ScoreBoard[newMe.Agent1.X, newMe.Agent1.Y];
+                        }
+                        if (!MeBoard[newMe.Agent2.X, newMe.Agent2.Y] && !EnemyBoard[newMe.Agent2.X, newMe.Agent2.Y])
+                        {
+                            score += ScoreBoard[newMe.Agent2.X, newMe.Agent2.Y];
+                        }
+                        score = -score;
+                    }
+                    orderling.Add(new KeyValuePair<int, (VelocityPoint, VelocityPoint)>(score, (WayEnumerator[i], WayEnumerator[m])));
+                }
+            }
+            orderling.Sort(impl_sorter);
+            return orderling;
+        }
+
+        private int impl_sorter(KeyValuePair<int, (VelocityPoint Agent1, VelocityPoint Agent2)> a, KeyValuePair<int, (VelocityPoint Agent1, VelocityPoint Agent2)> b) => a.Key - b.Key;
+
+        protected override int CalculateTimerMiliSconds(int miliseconds)
+        {
+            return miliseconds - 1000;
+        }
+
+        protected override void EndGame(GameEnd end)
+        {
+        }
+
+    }
+}

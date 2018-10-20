@@ -8,7 +8,7 @@ namespace AngryBee.Rule
 {
     public class MovableChecker
     {
-        public MovableResult MovableCheck(in ColoredBoardSmallBigger MeField, in ColoredBoardSmallBigger EnemyField, Boards.Player Me, Boards.Player Enemy )
+        public MovableResult MovableCheck(in ColoredBoardSmallBigger MeField, in ColoredBoardSmallBigger EnemyField, Boards.Player oldMe, Boards.Player Me, Boards.Player Enemy )
         {
             MovableResult result = new MovableResult();
 
@@ -36,7 +36,7 @@ namespace AngryBee.Rule
                 return result;
             }
 
-            if (Me.Agent1 == Me.Agent2)
+            if (Me.Agent1 == Me.Agent2 || Me.Agent1 == oldMe.Agent2 || Me.Agent2 == oldMe.Agent1)
             {
                 result.Me1 = MovableResultType.NotMovable;
                 result.Me2 = MovableResultType.NotMovable;
