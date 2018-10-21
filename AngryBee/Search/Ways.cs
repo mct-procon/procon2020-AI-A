@@ -1,10 +1,25 @@
 ﻿using MCTProcon29Protocol;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
 namespace AngryBee.Search
 {
+    public class ObjectPool<T> where T : class
+    {
+        ConcurrentBag<T> bag = new ConcurrentBag<T>();
+
+        public void Return(T obj)
+        {
+            bag.Add(obj);
+        }
+        public bool Get(out T obj)
+        {
+            return bag.TryTake(out obj);
+        }
+    }
+
     public struct Way : IComparable
     {
         public int Point { get; set; }

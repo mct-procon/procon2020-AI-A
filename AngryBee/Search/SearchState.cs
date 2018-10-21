@@ -13,19 +13,27 @@ namespace AngryBee.Search
 		public ColoredBoardSmallBigger EnemyBoard;
 		public Player Me;
 		public Player Enemy;
+        public ObjectPool<Ways> WaysPool;
 
-		public SearchState(in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy)
+		public SearchState(in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, ObjectPool<Ways> waysPool)
 		{
 			this.MeBoard = MeBoard;
 			this.EnemyBoard = EnemyBoard;
 			this.Me = Me;
 			this.Enemy = Enemy;
+            this.WaysPool = waysPool;
 		}
+
+        public Ways GetWays()
+        {
+            if (WaysPool.Get(out var ret)) return ret;
+            else return new Ways();
+        }
 
 		//全ての指示可能な方向を求めて, (way1[i], way2[i])に入れる。(Meが動くとする)
 		public Ways MakeMoves(VelocityPoint[] WayEnumrator)
 		{
-            Ways Result = new Ways();
+            Ways Result = GetWays();
 			int n = WayEnumrator.Length;
 			uint W = MeBoard.Width;
 			uint H = MeBoard.Height;

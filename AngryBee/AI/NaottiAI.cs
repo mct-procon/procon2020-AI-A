@@ -13,6 +13,7 @@ namespace AngryBee.AI
         PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
         VelocityPoint[] WayEnumerator = { (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1) };
+        ObjectPool<Ways> WaysPool = new ObjectPool<Ways>();
 
         private struct DP
         {
@@ -50,7 +51,7 @@ namespace AngryBee.AI
             int deepness = StartDepth;
             int maxDepth = (TurnCount - CurrentTurn) * 2;
             PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
-            SearchState state = new SearchState(MyBoard, EnemyBoard, new Player(MyAgent1, MyAgent2), new Player(EnemyAgent1, EnemyAgent2));
+            SearchState state = new SearchState(MyBoard, EnemyBoard, new Player(MyAgent1, MyAgent2), new Player(EnemyAgent1, EnemyAgent2), WaysPool);
 
             for (; deepness < maxDepth; deepness++)
             {
@@ -88,6 +89,8 @@ namespace AngryBee.AI
                 }
                 state = backup;
             }
+            ways.Erase();
+            WaysPool.Return(ways);
             return alpha;
         }
 
