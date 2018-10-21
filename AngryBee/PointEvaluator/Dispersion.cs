@@ -9,6 +9,7 @@ namespace AngryBee.PointEvaluator
     class Dispersion : Base
     {
         const float DispersionRate = 0.5f;
+        const float SurroundRate = 0.5f;
         private struct PointFloat
         {
             public float x;
@@ -40,7 +41,7 @@ namespace AngryBee.PointEvaluator
             for (uint x = 0; x < width; ++x)
                 for (uint y = 0; y < height; ++y)
                     if (!checker[x, y])
-                        result += Math.Abs(ScoreBoard[x, y]);
+                        result = result + (int)(Math.Abs(ScoreBoard[x, y]) * SurroundRate);
 
             float rec = 0;
             int checkedCount = 0;
