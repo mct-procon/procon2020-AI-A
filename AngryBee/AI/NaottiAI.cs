@@ -71,7 +71,7 @@ namespace AngryBee.AI
                 return evaluator.Calculate(ScoreBoard, state.MeBoard, 0) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0);
             }
 
-            List<Way> ways = state.MakeMoves(WayEnumerator);
+            Ways ways = state.MakeMoves(WayEnumerator);
             SortMoves(ScoreBoard, state, ways, count);
 
             for (int i = 0; i < ways.Count; i++)
@@ -97,7 +97,7 @@ namespace AngryBee.AI
         //ルール1. Killer手（優先したい手）があれば、それを優先する
         //ルール2. 次のmoveで得られる「タイルポイント」の合計値が大きい移動（の組み合わせ）を優先する。
         //ルール2では, タイル除去によっても「タイルポイント」が得られるとして計算する。
-        private void SortMoves(sbyte[,] ScoreBoard, SearchState state, List<Way> way, int deep)
+        private void SortMoves(sbyte[,] ScoreBoard, SearchState state, Ways way, int deep)
         {
             var Killer = dp[deep].Score == int.MinValue ? new Player(new Point(114, 514), new Point(114, 514)) : new Player(state.Me.Agent1 + dp[deep].Agent1Way, state.Me.Agent2 + dp[deep].Agent2Way);
 
@@ -115,10 +115,8 @@ namespace AngryBee.AI
                 else if (!state.MeBoard[next2]) { score += ScoreBoard[next2.X, next2.Y]; }
                 way[i].Point = -score;                                                      //スコア降順にソートするために-scoreを入れておく
             }
-            way.Sort(impl_sorter);
+            way.Sort();
         }
-
-        private int impl_sorter(Way a, Way b) => a.Point - b.Point;
 
         protected override int CalculateTimerMiliSconds(int miliseconds)
         {

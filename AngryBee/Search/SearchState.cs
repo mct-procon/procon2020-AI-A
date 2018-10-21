@@ -7,20 +7,6 @@ using AngryBee.Boards;
 
 namespace AngryBee.Search
 {
-    public class Way
-    {
-        public int Point { get; set; }
-        public VelocityPoint Agent1Way { get; set; }
-        public VelocityPoint Agent2Way { get; set; }
-
-        public Way(VelocityPoint a1, VelocityPoint a2)
-        {
-            Agent1Way = a1;
-            Agent2Way = a2;
-            Point = 0;
-        }
-    }
-
     public struct SearchState
     {
 		public ColoredBoardSmallBigger MeBoard;
@@ -37,9 +23,9 @@ namespace AngryBee.Search
 		}
 
 		//全ての指示可能な方向を求めて, (way1[i], way2[i])に入れる。(Meが動くとする)
-		public List<Way> MakeMoves(VelocityPoint[] WayEnumrator)
+		public Ways MakeMoves(VelocityPoint[] WayEnumrator)
 		{
-            List<Way> Result = new List<Way>();
+            Ways Result = new Ways();
 			int n = WayEnumrator.Length;
 			uint W = MeBoard.Width;
 			uint H = MeBoard.Height;
