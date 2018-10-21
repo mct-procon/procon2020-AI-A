@@ -5,16 +5,15 @@ using MCTProcon29Protocol.Methods;
 using MCTProcon29Protocol;
 using AngryBee.Boards;
 
-namespace AngryBee.SearchState
+namespace AngryBee.Search
 {
-    class SearchState
+    public struct SearchState
     {
 		public ColoredBoardSmallBigger MeBoard;
 		public ColoredBoardSmallBigger EnemyBoard;
 		public Player Me;
 		public Player Enemy;
 
-		public SearchState() { }
 		public SearchState(in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy)
 		{
 			this.MeBoard = MeBoard;
@@ -23,7 +22,7 @@ namespace AngryBee.SearchState
 			this.Enemy = Enemy;
 		}
 
-		//全ての指示可能な方向(0～8)を求めて, (way1[i], way2[i])に入れる。(Meが動くとする)
+		//全ての指示可能な方向を求めて, (way1[i], way2[i])に入れる。(Meが動くとする)
 		public void MakeMoves(VelocityPoint[] WayEmnurator, List<VelocityPoint> way1, List<VelocityPoint> way2)
 		{
 			int n = WayEmnurator.Length;
