@@ -71,22 +71,19 @@ namespace AngryBee.AI
                 return evaluator.Calculate(ScoreBoard, state.MeBoard, 0) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0);
             }
 
-            List<VelocityPoint> way1 = new List<VelocityPoint>();
-            List<VelocityPoint> way2 = new List<VelocityPoint>();
+            List<Way> ways = state.MakeMoves(WayEnumerator);
+            SortMoves(ScoreBoard, state, ways, count);
 
-            state.MakeMoves(WayEnumerator, way1, way2);
-            List<KeyValuePair<int, (VelocityPoint Agent1, VelocityPoint Agent2)>> moves = SortMoves(ScoreBoard, state, way1, way2, count);
-
-            for (int i = 0; i < moves.Count; i++)
+            for (int i = 0; i < ways.Count; i++)
             {
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
                 SearchState backup = state;
-                state.Move(moves[i].Value.Agent1, moves[i].Value.Agent2);
+                state.Move(ways[i].Agent1Way, ways[i].Agent2Way);
                 int res = -NegaMax(deepness - 1, state, -beta, -alpha, count + 1, evaluator);
                 if (alpha < res)
                 {
                     alpha = res;
-                    dp[count].UpdateScore(alpha, moves[i].Value.Agent1, moves[i].Value.Agent2);
+                    dp[count].UpdateScore(alpha, ways[i].Agent1Way, ways[i].Agent2Way);
                     if (alpha >= beta) return beta; //βcut
                 }
                 state = backup;
@@ -100,17 +97,15 @@ namespace AngryBee.AI
         //ルール1. Killer手（優先したい手）があれば、それを優先する
         //ルール2. 次のmoveで得られる「タイルポイント」の合計値が大きい移動（の組み合わせ）を優先する。
         //ルール2では, タイル除去によっても「タイルポイント」が得られるとして計算する。
-        private List<KeyValuePair<int, (VelocityPoint Agent1, VelocityPoint Agent2)>> SortMoves(sbyte[,] ScoreBoard, SearchState state, List<VelocityPoint> way1, List<VelocityPoint> way2, int deep)
+        private void SortMoves(sbyte[,] ScoreBoard, SearchState state, List<Way> way, int deep)
         {
-            int n = way1.Count;
-            List<KeyValuePair<int, (VelocityPoint, VelocityPoint)>> orderling = new List<KeyValuePair<int, (VelocityPoint, VelocityPoint)>>();
             var Killer = dp[deep].Score == int.MinValue ? new Player(new Point(114, 514), new Point(114, 514)) : new Player(state.Me.Agent1 + dp[deep].Agent1Way, state.Me.Agent2 + dp[deep].Agent2Way);
 
-            for (int i = 0; i < n; i++)
+            for (int i = 0; i < way.Count; i++)
             {
                 int score = 0;
-                Point next1 = state.Me.Agent1 + way1[i];
-                Point next2 = state.Me.Agent2 + way2[i];
+                Point next1 = state.Me.Agent1 + way[i].Agent1Way;
+                Point next2 = state.Me.Agent2 + way[i].Agent2Way;
 
                 if (Killer.Agent1 == next1 && Killer.Agent2 == next2) { score = 100; }
 
@@ -118,13 +113,12 @@ namespace AngryBee.AI
                 else if (!state.MeBoard[next1]) { score += ScoreBoard[next1.X, next1.Y]; }  //移動でMeの陣地が増えて有利になる
                 if (state.EnemyBoard[next2]) { score += ScoreBoard[next2.X, next2.Y]; }
                 else if (!state.MeBoard[next2]) { score += ScoreBoard[next2.X, next2.Y]; }
-                orderling.Add(new KeyValuePair<int, (VelocityPoint, VelocityPoint)>(-score, (way1[i], way2[i])));   //スコア降順にソートするために-scoreを入れておく
+                way[i].Point = -score;                                                      //スコア降順にソートするために-scoreを入れておく
             }
-            orderling.Sort(impl_sorter);
-            return orderling;
+            way.Sort(impl_sorter);
         }
 
-        private int impl_sorter(KeyValuePair<int, (VelocityPoint Agent1, VelocityPoint Agent2)> a, KeyValuePair<int, (VelocityPoint Agent1, VelocityPoint Agent2)> b) => a.Key - b.Key;
+        private int impl_sorter(Way a, Way b) => a.Point - b.Point;
 
         protected override int CalculateTimerMiliSconds(int miliseconds)
         {

@@ -7,6 +7,20 @@ using AngryBee.Boards;
 
 namespace AngryBee.Search
 {
+    public class Way
+    {
+        public int Point { get; set; }
+        public VelocityPoint Agent1Way { get; set; }
+        public VelocityPoint Agent2Way { get; set; }
+
+        public Way(VelocityPoint a1, VelocityPoint a2)
+        {
+            Agent1Way = a1;
+            Agent2Way = a2;
+            Point = 0;
+        }
+    }
+
     public struct SearchState
     {
 		public ColoredBoardSmallBigger MeBoard;
@@ -23,30 +37,31 @@ namespace AngryBee.Search
 		}
 
 		//全ての指示可能な方向を求めて, (way1[i], way2[i])に入れる。(Meが動くとする)
-		public void MakeMoves(VelocityPoint[] WayEmnurator, List<VelocityPoint> way1, List<VelocityPoint> way2)
+		public List<Way> MakeMoves(VelocityPoint[] WayEnumrator)
 		{
-			int n = WayEmnurator.Length;
+            List<Way> Result = new List<Way>();
+			int n = WayEnumrator.Length;
 			uint W = MeBoard.Width;
 			uint H = MeBoard.Height;
 			int i, j;
 
 			for (i = 0; i < n; i++)
 			{
-				Point next1 = Me.Agent1 + WayEmnurator[i];
+				Point next1 = Me.Agent1 + WayEnumrator[i];
 				if (next1.X >= W || next1.Y >= H) continue;
 				if (Enemy.Agent1 == next1) continue;
 				if (Enemy.Agent2 == next1) continue;
 				for (j = 0; j < n; j++)
 				{
-					Point next2 = Me.Agent2 + WayEmnurator[j];
+					Point next2 = Me.Agent2 + WayEnumrator[j];
 					if (next2.X >= W || next2.Y >= H) continue;
 					if (Enemy.Agent1 == next2) continue;
 					if (Enemy.Agent2 == next2) continue;
 					if (next1 == next2) continue;
-					way1.Add(WayEmnurator[i]);
-					way2.Add(WayEmnurator[j]);
+					Result.Add(new Way(WayEnumrator[i], WayEnumrator[j]));
 				}
 			}
+            return Result;
 		}
 
 		//Search Stateを更新する (MeとEnemyの入れ替えも忘れずに）（呼び出し時の前提：Validな動きである）
