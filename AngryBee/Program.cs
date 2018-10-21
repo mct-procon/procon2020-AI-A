@@ -26,6 +26,7 @@ namespace AngryBee
             //Ai_PriorityErasing.MaxDepth = int.Parse(Console.ReadLine());
 
             AI.StartSync(portId, true);
+
             /*byte width = 12;
             byte height = 12;
 
