@@ -4,15 +4,14 @@ using System.Collections.Generic;
 using System.Text;
 using MCTProcon29Protocol.Methods;
 using MCTProcon29Protocol;
+using AngryBee.Search;
 
 namespace AngryBee.AI
 {
     public class NaottiAI : MCTProcon29Protocol.AIFramework.AIBase
     {
-        Rule.MovableChecker Checker = new Rule.MovableChecker();
         PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
-
         VelocityPoint[] WayEnumerator = { (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1) };
 
         private struct DP
@@ -50,279 +49,76 @@ namespace AngryBee.AI
                 dp[i].Score = int.MinValue;
             int deepness = StartDepth;
             int maxDepth = (TurnCount - CurrentTurn) * 2;
-            PointEvaluator.Base evaluer = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
-            for (; deepness < maxDepth ; deepness++)
+            PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
+            SearchState state = new SearchState(MyBoard, EnemyBoard, new Player(MyAgent1, MyAgent2), new Player(EnemyAgent1, EnemyAgent2));
+
+            for (; deepness < maxDepth; deepness++)
             {
-                var tmp = SolveSub(deepness, evaluer);
+                NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator);
                 if (CancellationToken.IsCancellationRequested == false)
-                    SolverResult = tmp;
+                    SolverResult = new Decided(dp[0].Agent1Way, dp[0].Agent2Way);
                 else
                     break;
                 Log("[SOLVER] deepness = {0}", deepness);
             }
         }
 
-        private Decided SolveSub(int deepness, PointEvaluator.Base evaluer)
-        {
-            int alpha = int.MinValue + 1;
-            int beta = int.MaxValue;
-            int result = int.MinValue;
-
-            Player Killer = new Player(new Point(114, 114), new Point(114, 114));
-            var nextMe = MoveOrderling(ScoreBoard, MyBoard, EnemyBoard, new Player(MyAgent1, MyAgent2), new Player(EnemyAgent1, EnemyAgent2), 0);
-
-            Decided returnValue = null;
-
-            Player Me = new Player(MyAgent1, MyAgent2);
-
-            for (int i = 0; i < nextMe.Count; i++)
-            {
-                var nextMeValue = nextMe[i].Value;
-                Player newMe = Me;
-                newMe.Agent1 += nextMeValue.Agent1;
-                newMe.Agent2 += nextMeValue.Agent2;
-
-                var movable = Checker.MovableCheck(MyBoard, EnemyBoard, Me, newMe, new Player(EnemyAgent1, EnemyAgent2));
-
-                if (!movable.IsMovable) continue;
-
-                int current = 0;
-                var newMeBoard = MyBoard;
-
-                if (movable.IsEraseNeeded)
-                {
-                    var newEnBoard = EnemyBoard;
-
-                    if (movable.Me1 == Rule.MovableResultType.EraseNeeded)
-                    {
-                        newEnBoard[newMe.Agent1] = false;
-                        newMe.Agent1 = MyAgent1;
-                    }
-                    else
-                        newMeBoard[newMe.Agent1] = true;
-
-                    if (movable.Me2 == Rule.MovableResultType.EraseNeeded)
-                    {
-                        newEnBoard[newMe.Agent2] = false;
-                        newMe.Agent2 = MyAgent2;
-                    }
-                    else
-                        newMeBoard[newMe.Agent2] = true;
-
-                    current = Mini(deepness - 1, ScoreBoard, newMeBoard, newEnBoard, newMe, new Player(EnemyAgent1, EnemyAgent2), Math.Max(result, alpha), beta, 1, evaluer);
-                }
-                else
-                {
-                    newMeBoard[newMe.Agent1] = true;
-                    newMeBoard[newMe.Agent2] = true;
-                    current = Mini(deepness - 1, ScoreBoard, newMeBoard, EnemyBoard, newMe, new Player(EnemyAgent1, EnemyAgent2), Math.Max(result, alpha), beta, 1, evaluer);
-                }
-
-                if (result < current)
-                {
-                    result = current;
-                    dp[0].UpdateScore(result, nextMeValue.Agent1, nextMeValue.Agent2);
-                    returnValue = new Decided(nextMeValue.Agent1, nextMeValue.Agent2);
-                }
-                if (result >= beta)
-                {
-                    return returnValue;
-                }
-            }
-            return returnValue;
-        }
-
-        //Meが動く
-        public int Max(int deepness, sbyte[,] ScoreBoard, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, int alpha, int beta, int count, PointEvaluator.Base evaluer)
+        //Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
+        private int NegaMax(int deepness, SearchState state, int alpha, int beta, int count, PointEvaluator.Base evaluator)
         {
             if (deepness == 0)
             {
-                //ends++;
-                return evaluer.Calculate(ScoreBoard, MeBoard, 0) - evaluer.Calculate(ScoreBoard, EnemyBoard, 0);
+                return evaluator.Calculate(ScoreBoard, state.MeBoard, 0) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0);
             }
 
-            int result = int.MinValue;
+            List<VelocityPoint> way1 = new List<VelocityPoint>();
+            List<VelocityPoint> way2 = new List<VelocityPoint>();
 
-            Player Killer = new Player(new Point(114, 114), new Point(114, 114));
-            var nextMe = MoveOrderling(ScoreBoard, MeBoard, EnemyBoard, Me, Enemy, count);
+            state.MakeMoves(WayEnumerator, way1, way2);
+            List<KeyValuePair<int, (VelocityPoint Agent1, VelocityPoint Agent2)>> moves = SortMoves(ScoreBoard, state, way1, way2, count);
 
-            for (int i = 0; i < nextMe.Count; i++)
+            for (int i = 0; i < moves.Count; i++)
             {
-                if (CancellationToken.IsCancellationRequested) { break; }
-
-                var nextMeValue = nextMe[i].Value;
-                Player newMe = Me;
-                newMe.Agent1 += nextMeValue.Agent1;
-                newMe.Agent2 += nextMeValue.Agent2;
-
-                var movable = Checker.MovableCheck(MeBoard, EnemyBoard, Me, newMe, Enemy);
-
-                if (!movable.IsMovable) continue;
-
-                int current = 0;
-                var newMeBoard = MeBoard;
-
-                if (movable.IsEraseNeeded)
+                if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
+                SearchState backup = state;
+                state.Move(moves[i].Value.Agent1, moves[i].Value.Agent2);
+                int res = -NegaMax(deepness - 1, state, -beta, -alpha, count + 1, evaluator);
+                if (alpha < res)
                 {
-                    var newEnBoard = EnemyBoard;
-
-                    if (movable.Me1 == Rule.MovableResultType.EraseNeeded)
-                    {
-                        newEnBoard[newMe.Agent1] = false;
-                        newMe.Agent1 = Me.Agent1;
-                    }
-                    else
-                        newMeBoard[newMe.Agent1] = true;
-
-                    if (movable.Me2 == Rule.MovableResultType.EraseNeeded)
-                    {
-                        newEnBoard[newMe.Agent2] = false;
-                        newMe.Agent2 = Me.Agent2;
-                    }
-                    else
-                        newMeBoard[newMe.Agent2] = true;
-
-                    current = Mini(deepness - 1, ScoreBoard, newMeBoard, newEnBoard, newMe, Enemy, Math.Max(result, alpha), beta, count + 1, evaluer);
+                    alpha = res;
+                    dp[count].UpdateScore(alpha, moves[i].Value.Agent1, moves[i].Value.Agent2);
+                    if (alpha >= beta) return beta; //βcut
                 }
-                else
-                {
-                    newMeBoard[newMe.Agent1] = true;
-                    newMeBoard[newMe.Agent2] = true;
-                    current = Mini(deepness - 1, ScoreBoard, newMeBoard, EnemyBoard, newMe, Enemy, Math.Max(result, alpha), beta, count + 1, evaluer);
-                }
-
-                if (result < current)
-                {
-                    result = current;
-                    dp[count].UpdateScore(result, nextMeValue.Agent1, nextMeValue.Agent2);
-                }
-                if (result >= beta)
-                {
-                    return result;
-                }
+                state = backup;
             }
-
-            return result;
-        }
-
-        //Enemyが動く
-        public int Mini(int deepness, sbyte[,] ScoreBoard, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, int alpha, int beta, int count, PointEvaluator.Base evaluer)
-        {
-            if (deepness == 0)
-            {
-                //ends++;
-                return evaluer.Calculate(ScoreBoard, MeBoard, 0) - evaluer.Calculate(ScoreBoard, EnemyBoard, 0);
-            }
-
-            int result = int.MaxValue;
-
-            Player Killer = new Player(new Point(114, 114), new Point(114, 114));
-            var nextEnemy = MoveOrderling(ScoreBoard, EnemyBoard, MeBoard, Enemy, Me, count);
-
-            for (int i = 0; i < nextEnemy.Count; i++)
-            {
-                if (CancellationToken.IsCancellationRequested) { break; }
-
-                var nextEnemyValue = nextEnemy[i].Value;
-                Player newEnemy = Enemy;
-                newEnemy.Agent1 += nextEnemyValue.Agent1;
-                newEnemy.Agent2 += nextEnemyValue.Agent2;
-
-                var movable = Checker.MovableCheck(EnemyBoard, MeBoard, Enemy, newEnemy, Me);
-
-                if (!movable.IsMovable) continue;
-
-                int current = 0;
-                var newEnBoard = EnemyBoard;
-
-                if (movable.IsEraseNeeded)
-                {
-                    var newMeBoard = MeBoard;
-
-                    if (movable.Me1 == Rule.MovableResultType.EraseNeeded)
-                    {
-                        newMeBoard[newEnemy.Agent1] = false;
-                        newEnemy.Agent1 = Enemy.Agent1;
-                    }
-                    else
-                        newEnBoard[newEnemy.Agent1] = true;
-
-                    if (movable.Me2 == Rule.MovableResultType.EraseNeeded)
-                    {
-                        newMeBoard[newEnemy.Agent2] = false;
-                        newEnemy.Agent2 = Enemy.Agent2;
-                    }
-                    else
-                        newEnBoard[newEnemy.Agent2] = true;
-
-
-                    current = Max(deepness - 1, ScoreBoard, newMeBoard, newEnBoard, Me, newEnemy, alpha, Math.Min(result, beta), count + 1, evaluer);
-                }
-                else
-                {
-                    newEnBoard[newEnemy.Agent1] = true;
-                    newEnBoard[newEnemy.Agent2] = true;
-                    current = Max(deepness - 1, ScoreBoard, MeBoard, newEnBoard, Me, newEnemy, alpha, Math.Min(result, beta), count + 1, evaluer);
-                }
-
-                if (result > current)
-                {
-                    result = current;
-                    dp[count].UpdateScore(-result, nextEnemyValue.Agent1, nextEnemyValue.Agent2);
-                }
-                if (result <= alpha)
-                    return result;
-            }
-
-            return result;
+            return alpha;
         }
 
         //遷移順を決める.  「この関数においては」MeBoard…手番プレイヤのボード, Me…手番プレイヤ、とします。
-        //(この関数におけるMeは、Maxi関数におけるMe, Mini関数におけるEnemyです）
-        //newMe[0]が最初に探索したい行き先、nextMe[1]が次に探索したい行き先…として、nextMeに「次の行き先」を入れていきます。
-        //以下のルールで優先順を決めます。
-        //ルール1. Killer手があれば、それを優先する。(Killer手がなければ、Killer.Agent1 = (514, 514), Killer.Agent2 = (514, 514)のように範囲外の移動先を設定すること。)
-        //ルール2. 次のmoveで得られる「タイルポイント」の合計値、が大きい移動(の組み合わせ)を優先する。
-        //なお、ルールはMovableChecker.csに準ずるため、現在は、「タイル除去先にもう一方のエージェントが移動することはできない」として計算しています。
-        private List<KeyValuePair<int, (VelocityPoint Agent1, VelocityPoint Agent2)>> MoveOrderling(sbyte[,] ScoreBoard, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, int deep)
+        //引数: stateは手番プレイヤが手を打つ前の探索状態、(way1[i], way2[i])はi番目の合法手（移動量）です。
+        //以下のルールで優先順を決めます.
+        //ルール1. Killer手（優先したい手）があれば、それを優先する
+        //ルール2. 次のmoveで得られる「タイルポイント」の合計値が大きい移動（の組み合わせ）を優先する。
+        //ルール2では, タイル除去によっても「タイルポイント」が得られるとして計算する。
+        private List<KeyValuePair<int, (VelocityPoint Agent1, VelocityPoint Agent2)>> SortMoves(sbyte[,] ScoreBoard, SearchState state, List<VelocityPoint> way1, List<VelocityPoint> way2, int deep)
         {
-            uint width = MeBoard.Width;
-            uint height = MeBoard.Height;
+            int n = way1.Count;
             List<KeyValuePair<int, (VelocityPoint, VelocityPoint)>> orderling = new List<KeyValuePair<int, (VelocityPoint, VelocityPoint)>>();
+            var Killer = dp[deep].Score == int.MinValue ? new Player(new Point(114, 514), new Point(114, 514)) : new Player(state.Me.Agent1 + dp[deep].Agent1Way, state.Me.Agent2 + dp[deep].Agent2Way);
 
-            var Killer = dp[deep].Score == int.MinValue ? new Player(new Point(114, 514), new Point(114, 514)) : new Player(Me.Agent1 + dp[deep].Agent1Way, Me.Agent2 + dp[deep].Agent2Way);
-
-            for (int i = 0; i < WayEnumerator.Length; i++)
+            for (int i = 0; i < n; i++)
             {
-                for (int m = 0; m < WayEnumerator.Length; m++)
-                {
-                    Player newMe = Me;
-                    newMe.Agent1 += WayEnumerator[i];
-                    newMe.Agent2 += WayEnumerator[m];
+                int score = 0;
+                Point next1 = state.Me.Agent1 + way1[i];
+                Point next2 = state.Me.Agent2 + way2[i];
 
-                    int score = 0;  //優先度 (小さいほど優先度が高い）
-                    if (newMe.Agent1 == Killer.Agent1 && newMe.Agent2 == Killer.Agent2) score = -100;
-                    else if (newMe.Agent1.X >= width || newMe.Agent1.Y >= height) score = 100;
-                    else if (newMe.Agent2.X >= width || newMe.Agent2.Y >= height) score = 100;
-                    else if (newMe.Agent1 == newMe.Agent2) score = 100;
-                    else if (newMe.Agent1 == Enemy.Agent1) score = 100;
-                    else if (newMe.Agent1 == Enemy.Agent2) score = 100;
-                    else if (newMe.Agent2 == Enemy.Agent1) score = 100;
-                    else if (newMe.Agent2 == Enemy.Agent2) score = 100;
-                    else
-                    {
-                        if (!MeBoard[newMe.Agent1.X, newMe.Agent1.Y] && !EnemyBoard[newMe.Agent1.X, newMe.Agent1.Y])
-                        {
-                            score += ScoreBoard[newMe.Agent1.X, newMe.Agent1.Y];
-                        }
-                        if (!MeBoard[newMe.Agent2.X, newMe.Agent2.Y] && !EnemyBoard[newMe.Agent2.X, newMe.Agent2.Y])
-                        {
-                            score += ScoreBoard[newMe.Agent2.X, newMe.Agent2.Y];
-                        }
-                        score = -score;
-                    }
-                    orderling.Add(new KeyValuePair<int, (VelocityPoint, VelocityPoint)>(score, (WayEnumerator[i], WayEnumerator[m])));
-                }
+                if (Killer.Agent1 == next1 && Killer.Agent2 == next2) { score = 100; }
+
+                if (state.EnemyBoard[next1]) { score += ScoreBoard[next1.X, next1.Y]; }     //タイル除去によって有利になる
+                else if (!state.MeBoard[next1]) { score += ScoreBoard[next1.X, next1.Y]; }  //移動でMeの陣地が増えて有利になる
+                if (state.EnemyBoard[next2]) { score += ScoreBoard[next2.X, next2.Y]; }
+                else if (!state.MeBoard[next2]) { score += ScoreBoard[next2.X, next2.Y]; }
+                orderling.Add(new KeyValuePair<int, (VelocityPoint, VelocityPoint)>(-score, (way1[i], way2[i])));   //スコア降順にソートするために-scoreを入れておく
             }
             orderling.Sort(impl_sorter);
             return orderling;
@@ -338,6 +134,5 @@ namespace AngryBee.AI
         protected override void EndGame(GameEnd end)
         {
         }
-
     }
 }
