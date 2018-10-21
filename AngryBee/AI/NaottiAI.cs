@@ -113,7 +113,7 @@ namespace AngryBee.AI
                 else if (!state.MeBoard[next1]) { score += ScoreBoard[next1.X, next1.Y]; }  //移動でMeの陣地が増えて有利になる
                 if (state.EnemyBoard[next2]) { score += ScoreBoard[next2.X, next2.Y]; }
                 else if (!state.MeBoard[next2]) { score += ScoreBoard[next2.X, next2.Y]; }
-                way[i].Point = -score;                                                      //スコア降順にソートするために-scoreを入れておく
+                way[i].Point = score;
             }
             way.Sort();
         }

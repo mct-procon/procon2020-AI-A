@@ -18,7 +18,7 @@ namespace AngryBee.Search
             Point = 0;
         }
 
-        public int CompareTo(object obj) => this.Point - ((Way)obj).Point;
+        public int CompareTo(object obj) => ((Way)obj).Point - this.Point;
     }
 
     public unsafe class Ways

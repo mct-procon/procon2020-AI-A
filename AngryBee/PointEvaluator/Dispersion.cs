@@ -8,8 +8,8 @@ namespace AngryBee.PointEvaluator
     //塗られているマスの重心を用いて、分散を計算する。
     class Dispersion : Base
     {
-        const float DispersionRate = 0.5f;
-        const float SurroundRate = 0.5f;
+        const float DispersionRate = 0.8f;
+        const float SurroundRate = 0.8f;
         private struct PointFloat
         {
             public float x;
