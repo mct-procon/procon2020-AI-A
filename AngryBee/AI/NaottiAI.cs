@@ -53,7 +53,7 @@ namespace AngryBee.AI
             PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
             SearchState state = new SearchState(MyBoard, EnemyBoard, new Player(MyAgent1, MyAgent2), new Player(EnemyAgent1, EnemyAgent2), WaysPool);
 
-            for (; deepness < maxDepth; deepness++)
+            for (; deepness <= maxDepth; deepness++)
             {
                 NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator);
                 if (CancellationToken.IsCancellationRequested == false)
