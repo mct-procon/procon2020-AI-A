@@ -91,6 +91,26 @@ namespace AngryBee.Search
 			Swap(ref Me, ref Enemy);
 		}
 
+		//内容が等しいか？
+		public bool Equals(SearchState st)
+		{
+			if (MeBoard.Height != st.MeBoard.Height) return false;
+			if (MeBoard.Width != st.MeBoard.Width) return false;
+			for (uint i = 0; i < MeBoard.Height; i++) for (uint j = 0; j < MeBoard.Width; j++) if (MeBoard[new Point(j, i)] != st.MeBoard[new Point(j, i)]) return false;
+
+			if (EnemyBoard.Height != st.EnemyBoard.Height) return false;
+			if (EnemyBoard.Width != st.EnemyBoard.Width) return false;
+			for (uint i = 0; i < EnemyBoard.Height; i++)
+				for (uint j = 0; j < EnemyBoard.Width; j++)
+					if (EnemyBoard[new Point(j, i)] != st.EnemyBoard[new Point(j, i)]) return false;
+
+			if (Me.Agent1 != st.Me.Agent1) return false;
+			if (Me.Agent2 != st.Me.Agent2) return false;
+			if (Enemy.Agent1 != st.Enemy.Agent1) return false;
+			if (Enemy.Agent2 != st.Enemy.Agent2) return false;
+			return true;
+		}
+
 		//Swap関数
 		private static void Swap<T>(ref T a, ref T b)
 		{

@@ -18,9 +18,13 @@ namespace AngryBee
 			if (aiType == 1) { AI = new AI.NaottiAI(); }
 			if (aiType == 2) {
 				int greedyMaxDepth = 0;
+				int KyogoTurn = 100;
 				Console.WriteLine("静止探索の深さ(ターン数 * 2)を入力＞");
 				greedyMaxDepth = int.Parse(Console.ReadLine());
-				AI = new AI.TestAI(1, greedyMaxDepth);
+				Console.WriteLine("競合チェックのターン数(しないならターン数以上の整数）＞");
+				KyogoTurn = int.Parse(Console.ReadLine());
+
+				AI = new AI.TestAI(1, greedyMaxDepth, KyogoTurn);
 			}
 			if (aiType == 3) { AI = new AI.TilePointAI(); }
 

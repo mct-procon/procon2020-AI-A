@@ -10,7 +10,7 @@ namespace AngryBee.AI
 {
     public class TestAI : MCTProcon29Protocol.AIFramework.AIBase
     {
-        PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
+        PointEvaluator.Base PointEvaluator_AreaCount = new PointEvaluator.AreaCount();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
         VelocityPoint[] WayEnumerator = { (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1) };
         ObjectPool<Ways> WaysPool = new ObjectPool<Ways>();
@@ -36,25 +36,54 @@ namespace AngryBee.AI
 
         public int StartDepth { get; set; } = 1;
         public int GreedyMaxDepth { get; } = 0;      //評価関数を呼び出す前に, 最大で深さいくつ分まで貪欲するか？
+		public List<SearchState> historyStates { get; } = null;
+		public List<Decided> historyDecides { get; } = null;
+		public Decided ngMove = null;
+		public int KyogoTurn { get; } = 100;
 
-        public TestAI(int startDepth = 1, int greedyMaxDepth = 0)
+		public TestAI(int startDepth = 1, int greedyMaxDepth = 0, int KyogoTurn = 100)
         {
             for (int i = 0; i < 50; ++i)
                 dp[i] = new DP();
             StartDepth = startDepth;
             GreedyMaxDepth = greedyMaxDepth;
-        }
+			historyStates = new List<SearchState>();
+			historyDecides = new List<Decided>();
+			this.KyogoTurn = KyogoTurn;
+		}
 
         //1ターン = 深さ2
         protected override void Solve()
         {
-            for (int i = 0; i < 50; ++i)
+			int i;
+            for (i = 0; i < 50; ++i)
                 dp[i].Score = int.MinValue;
             int deepness = StartDepth;
             int maxDepth = (TurnCount - CurrentTurn) * 2;
-            PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
+            PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_AreaCount;
             SearchState state = new SearchState(MyBoard, EnemyBoard, new Player(MyAgent1, MyAgent2), new Player(EnemyAgent1, EnemyAgent2), WaysPool);
 
+			//競合判定
+			int K = KyogoTurn;  //Kは1以上の整数
+			ngMove = null;
+			for (i = 0; i < K; i++)
+			{
+				if (historyStates.Count < K) { break; }
+				int id = historyStates.Count - 1 - i;
+				if (id < 0 || state.Equals(historyStates[id]) == false) break;
+				if (i + 1 < K && id > 0 && historyDecides[id].Equals(historyDecides[id - 1]) == false) break;
+			}
+			if (i == K)
+			{
+				int score = PointEvaluator_Normal.Calculate(ScoreBoard, state.MeBoard, 0) - PointEvaluator_Normal.Calculate(ScoreBoard, state.EnemyBoard, 0);
+				if (score <= 0)
+				{
+					ngMove = historyDecides[historyDecides.Count - 1];
+					Log("[SOLVER] conclusion!, you cannot move to ", ngMove);
+				}
+			}
+
+			//反復深化
             for (; deepness <= maxDepth; deepness++)
             {
                 NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, Math.Min(maxDepth - deepness, GreedyMaxDepth));
@@ -64,6 +93,10 @@ namespace AngryBee.AI
                     break;
                 Log("[SOLVER] deepness = {0}", deepness);
             }
+
+			//履歴の更新
+			historyStates.Add(state);
+			historyDecides.Add(SolverResult);
         }
 
         //Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
@@ -89,13 +122,15 @@ namespace AngryBee.AI
             for (int i = 0; i < ways.Count; i++)
             {
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
-                SearchState backup = state;
+				if (count == 0 && ngMove != null && new Decided(ways[i].Agent1Way, ways[i].Agent2Way).Equals(ngMove) == true) { continue; }	//競合手は指さない
+
+				SearchState backup = state;
                 state.Move(ways[i].Agent1Way, ways[i].Agent2Way);
                 int res = -NegaMax(deepness - 1, state, -beta, -alpha, count + 1, evaluator, greedyDepth);
                 if (alpha < res)
                 {
                     alpha = res;
-                    dp[count].UpdateScore(alpha, ways[i].Agent1Way, ways[i].Agent2Way);
+					dp[count].UpdateScore(alpha, ways[i].Agent1Way, ways[i].Agent2Way);
                     if (alpha >= beta) return beta; //βcut
                 }
                 state = backup;
