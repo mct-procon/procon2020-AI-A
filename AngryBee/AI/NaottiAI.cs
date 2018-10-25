@@ -30,42 +30,78 @@ namespace AngryBee.AI
                 }
             }
         }
-        private DP[] dp = new DP[50];
 
-        //public int ends = 0;
+		private DP[] dp1 = new DP[50];	//dp1[i] = 深さi時点での最善手
+		private DP[] dp2 = new DP[50];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
+		private Decided lastTurnDecided = null;		//1ターン前に「実際に」打った手（競合していた場合, 競合手==lastTurnDecidedとなる。競合していない場合は, この変数は探索に使用されない）
 
         public int StartDepth { get; set; } = 1;
 
         public NaottiAI(int startDepth = 1)
         {
-            for (int i = 0; i < 50; ++i)
-                dp[i] = new DP();
+			for (int i = 0; i < 50; ++i)
+			{
+				dp1[i] = new DP();
+				dp2[i] = new DP();
+			}
             StartDepth = startDepth;
         }
 
         //1ターン = 深さ2
         protected override void Solve()
         {
-            for (int i = 0; i < 50; ++i)
-                dp[i].Score = int.MinValue;
+			for (int i = 0; i < 50; ++i)
+			{
+				dp1[i].Score = int.MinValue;
+				dp2[i].Score = int.MinValue;
+			}
+
             int deepness = StartDepth;
-            int maxDepth = (TurnCount - CurrentTurn) * 2;
+            int maxDepth = (TurnCount - CurrentTurn) * 2 + 4;
             PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
             SearchState state = new SearchState(MyBoard, EnemyBoard, new Player(MyAgent1, MyAgent2), new Player(EnemyAgent1, EnemyAgent2), WaysPool);
 
+			//Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
+			if (!(lastTurnDecided is null)) Log("IsAgent1Moved = {0}, IsAgent2Moved = {1}, lastTurnDecided = {2}", IsAgent1Moved, IsAgent2Moved, lastTurnDecided);
+
             for (; deepness <= maxDepth; deepness++)
             {
-                NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator);
-                if (CancellationToken.IsCancellationRequested == false)
-                    SolverResult = new Decided(dp[0].Agent1Way, dp[0].Agent2Way);
-                else
-                    break;
+				DecidedEx resultList = new DecidedEx();
+
+				//普通にNegaMaxをして、最善手を探す
+                NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, null);
+				Decided best1 = new Decided(dp1[0].Agent1Way, dp1[0].Agent2Way);
+				resultList.Add(best1);
+				
+				//競合手 == 最善手になった場合、競合手をngMoveとして探索をおこない、最善手を探す
+				if (IsAgent1Moved == false && IsAgent2Moved == false && lastTurnDecided.Equals(best1))
+				{
+					NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, best1);
+					Decided best2 = new Decided(dp2[0].Agent1Way, dp2[0].Agent2Way);
+					resultList.Add(best2);
+				}
+
+				if (CancellationToken.IsCancellationRequested == false)
+				{
+					SolverResultList = resultList;
+				}
+				else
+					break;
                 Log("[SOLVER] deepness = {0}", deepness);
             }
-        }
+
+			if (SolverResultList.Count == 2)	//競合を避けるのを優先してみる（デバッグ用）
+			{
+				var tmp = SolverResultList[0];
+				SolverResultList[0] = SolverResultList[1];
+				SolverResultList[1] = tmp;
+			}
+			lastTurnDecided = SolverResultList[0];	//0番目の手を指したとする。（次善手を人間が選んで競合した～ということがなければOK）
+			Log("[SOLVER] SolverResultList.Count = {0}", SolverResultList.Count);
+		}
 
         //Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
-        private int NegaMax(int deepness, SearchState state, int alpha, int beta, int count, PointEvaluator.Base evaluator)
+        private int NegaMax(int deepness, SearchState state, int alpha, int beta, int count, PointEvaluator.Base evaluator, Decided ngMove)
         {
             if (deepness == 0)
             {
@@ -73,21 +109,23 @@ namespace AngryBee.AI
             }
 
             Ways ways = state.MakeMoves(WayEnumerator);
-            SortMoves(ScoreBoard, state, ways, count);
+            SortMoves(ScoreBoard, state, ways, count, ngMove);
 
             for (int i = 0; i < ways.Count; i++)
             {
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
-                SearchState backup = state;
-                state.Move(ways[i].Agent1Way, ways[i].Agent2Way);
-                int res = -NegaMax(deepness - 1, state, -beta, -alpha, count + 1, evaluator);
+				if (count == 0 && !(ngMove is null) && new Decided(ways[i].Agent1Way, ways[i].Agent2Way).Equals(ngMove)) { continue; }	//競合手を避ける場合
+
+                SearchState nextState = state;
+                nextState.Move(ways[i].Agent1Way, ways[i].Agent2Way);
+                int res = -NegaMax(deepness - 1, nextState, -beta, -alpha, count + 1, evaluator, ngMove);
                 if (alpha < res)
                 {
                     alpha = res;
-                    dp[count].UpdateScore(alpha, ways[i].Agent1Way, ways[i].Agent2Way);
+					if (ngMove is null) { dp1[count].UpdateScore(alpha, ways[i].Agent1Way, ways[i].Agent2Way); }
+					else { dp2[count].UpdateScore(alpha, ways[i].Agent1Way, ways[i].Agent2Way); }
                     if (alpha >= beta) return beta; //βcut
                 }
-                state = backup;
             }
             ways.Erase();
             WaysPool.Return(ways);
@@ -100,9 +138,17 @@ namespace AngryBee.AI
         //ルール1. Killer手（優先したい手）があれば、それを優先する
         //ルール2. 次のmoveで得られる「タイルポイント」の合計値が大きい移動（の組み合わせ）を優先する。
         //ルール2では, タイル除去によっても「タイルポイント」が得られるとして計算する。
-        private void SortMoves(sbyte[,] ScoreBoard, SearchState state, Ways way, int deep)
+        private void SortMoves(sbyte[,] ScoreBoard, SearchState state, Ways way, int deep, Decided ngMove)
         {
-            var Killer = dp[deep].Score == int.MinValue ? new Player(new Point(114, 514), new Point(114, 514)) : new Player(state.Me.Agent1 + dp[deep].Agent1Way, state.Me.Agent2 + dp[deep].Agent2Way);
+			Player Killer;
+			if (ngMove is null)
+			{
+				Killer = dp1[deep].Score == int.MinValue ? new Player(new Point(114, 514), new Point(114, 514)) : new Player(state.Me.Agent1 + dp1[deep].Agent1Way, state.Me.Agent2 + dp1[deep].Agent2Way);
+			}
+			else
+			{
+				Killer = dp2[deep].Score == int.MinValue ? new Player(new Point(114, 514), new Point(114, 514)) : new Player(state.Me.Agent1 + dp2[deep].Agent1Way, state.Me.Agent2 + dp2[deep].Agent2Way);
+			}
 
             for (int i = 0; i < way.Count; i++)
             {
