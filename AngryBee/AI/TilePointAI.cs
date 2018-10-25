@@ -10,7 +10,8 @@ namespace AngryBee.AI
 {
 	public class TilePointAI : MCTProcon29Protocol.AIFramework.AIBase
 	{
-		VelocityPoint[] WayEnumerator = { (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1) };
+		VelocityPoint[] WayEnumerator1 = { (1, -1), (1, 1), (-1, 1), (-1, -1) };
+		VelocityPoint[] WayEnumerator2 = { (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1) };
 		ObjectPool<Ways> WaysPool = new ObjectPool<Ways>();
 
 		private struct DP
@@ -69,6 +70,7 @@ namespace AngryBee.AI
 				return tilePoint;
 			}
 
+			VelocityPoint[] WayEnumerator = CurrentTurn * 2 + deepness <= 50 ? WayEnumerator1 : WayEnumerator2;
 			Ways ways = state.MakeMoves(WayEnumerator);
 			SortMoves(ScoreBoard, state, ways, count);
 
