@@ -57,11 +57,11 @@ namespace AngryBee.AI
 			}
 
             int deepness = StartDepth;
-            int maxDepth = (TurnCount - CurrentTurn) * 2 + 4;
+            int maxDepth = (TurnCount - CurrentTurn) * 2 + 2;
             PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
             SearchState state = new SearchState(MyBoard, EnemyBoard, new Player(MyAgent1, MyAgent2), new Player(EnemyAgent1, EnemyAgent2), WaysPool);
 
-			//Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
+			Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
 			if (!(lastTurnDecided is null)) Log("IsAgent1Moved = {0}, IsAgent2Moved = {1}, lastTurnDecided = {2}", IsAgent1Moved, IsAgent2Moved, lastTurnDecided);
 
             for (; deepness <= maxDepth; deepness++)
