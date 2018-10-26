@@ -34,10 +34,10 @@ namespace AngryBee.AI
 		private DP[] dp1 = new DP[50];	//dp1[i] = 深さi時点での最善手
 		private DP[] dp2 = new DP[50];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
 		private Decided lastTurnDecided = null;		//1ターン前に「実際に」打った手（競合していた場合, 競合手==lastTurnDecidedとなる。競合していない場合は, この変数は探索に使用されない）
-
+        private int greedyMaxDepth = 0;         //探索延長の最大手数
         public int StartDepth { get; set; } = 1;
 
-        public NaottiAI(int startDepth = 1)
+        public NaottiAI(int startDepth = 1, int greedyMaxDepth = 0)
         {
 			for (int i = 0; i < 50; ++i)
 			{
@@ -45,6 +45,7 @@ namespace AngryBee.AI
 				dp2[i] = new DP();
 			}
             StartDepth = startDepth;
+            this.greedyMaxDepth = greedyMaxDepth;
         }
 
         //1ターン = 深さ2
@@ -60,52 +61,77 @@ namespace AngryBee.AI
             int maxDepth = (TurnCount - CurrentTurn) * 2 + 2;
             PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
             SearchState state = new SearchState(MyBoard, EnemyBoard, new Player(MyAgent1, MyAgent2), new Player(EnemyAgent1, EnemyAgent2), WaysPool);
+            int score = PointEvaluator_Normal.Calculate(ScoreBoard, state.MeBoard, 0) - PointEvaluator_Normal.Calculate(ScoreBoard, state.EnemyBoard, 0);
 
-			Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
+            Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
 			if (!(lastTurnDecided is null)) Log("IsAgent1Moved = {0}, IsAgent2Moved = {1}, lastTurnDecided = {2}", IsAgent1Moved, IsAgent2Moved, lastTurnDecided);
+
+            if (!(lastTurnDecided is null) && IsAgent1Moved == false && IsAgent2Moved == false && score > 0)    //勝っている状態で競合していたら
+            {
+                SolverResultList.Add(lastTurnDecided);
+                return;
+            }
 
             for (; deepness <= maxDepth; deepness++)
             {
 				DecidedEx resultList = new DecidedEx();
 
+                int greedyDepth = Math.Min(greedyMaxDepth, maxDepth - deepness);
+                if ((deepness + greedyDepth) % 2 == 1 && greedyDepth > 0) greedyDepth--;
+
 				//普通にNegaMaxをして、最善手を探す
-                NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, null);
+                NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, null, greedyDepth);
 				Decided best1 = new Decided(dp1[0].Agent1Way, dp1[0].Agent2Way);
 				resultList.Add(best1);
-				
-				//競合手 == 最善手になった場合、競合手をngMoveとして探索をおこない、最善手を探す
-				if (IsAgent1Moved == false && IsAgent2Moved == false && lastTurnDecided.Equals(best1))
+
+                //競合手.Agent1 == 最善手.Agent1 && 競合手.Agent2 == 最善手.Agent2になった場合、競合手をngMoveとして探索をおこない、最善手を探す
+                if ((IsAgent1Moved == false && lastTurnDecided.MeAgent1.Equals(best1.MeAgent1)) && (IsAgent2Moved == false && lastTurnDecided.MeAgent2.Equals(best1.MeAgent2)))
 				{
-					NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, best1);
+					NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, best1, greedyDepth);
 					Decided best2 = new Decided(dp2[0].Agent1Way, dp2[0].Agent2Way);
 					resultList.Add(best2);
 				}
-
-				if (CancellationToken.IsCancellationRequested == false)
+                
+                if (CancellationToken.IsCancellationRequested == false)
 				{
 					SolverResultList = resultList;
-				}
+                    if (SolverResultList.Count == 2 && score <= 0)  //現時点で引き分けか負けていたら競合を避けるのを優先してみる（デバッグ用）
+                    {
+                        var tmp = SolverResultList[0];
+                        SolverResultList[0] = SolverResultList[1];
+                        SolverResultList[1] = tmp;
+                        Log("[SOLVER] Swaped! {0} {1}", SolverResult.MeAgent1, SolverResult.MeAgent2);
+                    }
+                    Log("[SOLVER] SolverResultList.Count = {0}, score = {1}", SolverResultList.Count, score);
+                }
 				else
-					break;
+					return;
                 Log("[SOLVER] deepness = {0}", deepness);
             }
-
-			if (SolverResultList.Count == 2)	//競合を避けるのを優先してみる（デバッグ用）
-			{
-				var tmp = SolverResultList[0];
-				SolverResultList[0] = SolverResultList[1];
-				SolverResultList[1] = tmp;
-			}
-			lastTurnDecided = SolverResultList[0];	//0番目の手を指したとする。（次善手を人間が選んで競合した～ということがなければOK）
-			Log("[SOLVER] SolverResultList.Count = {0}", SolverResultList.Count);
 		}
 
+        protected override void EndSolve(object sender, EventArgs e)
+        {
+            base.EndSolve(sender, e);
+            lastTurnDecided = SolverResultList[0];  //0番目の手を指したとする。（次善手を人間が選んで競合した～ということがなければOK）
+        }
+
         //Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
-        private int NegaMax(int deepness, SearchState state, int alpha, int beta, int count, PointEvaluator.Base evaluator, Decided ngMove)
+        private int NegaMax(int deepness, SearchState state, int alpha, int beta, int count, PointEvaluator.Base evaluator, Decided ngMove, int greedyDepth)
         {
             if (deepness == 0)
             {
-                return evaluator.Calculate(ScoreBoard, state.MeBoard, 0) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0);
+                for (int j = 0; j < greedyDepth; j++)
+                {
+                    Way move = state.MakeGreedyMove(ScoreBoard, WayEnumerator);
+                    state.Move(move.Agent1Way, move.Agent2Way);
+                    //Ways moves = state.MakeMoves(WayEnumerator);
+                    //SortMoves(ScoreBoard, state, moves, 49, null);
+                    //state.Move(moves[0].Agent1Way, moves[1].Agent2Way);
+                }
+                int score = evaluator.Calculate(ScoreBoard, state.MeBoard, 0) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0);
+                if (greedyDepth % 2 == 1) return -score;
+                return score;
             }
 
             Ways ways = state.MakeMoves(WayEnumerator);
@@ -114,11 +140,12 @@ namespace AngryBee.AI
             for (int i = 0; i < ways.Count; i++)
             {
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
-				if (count == 0 && !(ngMove is null) && new Decided(ways[i].Agent1Way, ways[i].Agent2Way).Equals(ngMove)) { continue; }	//競合手を避ける場合
-
+                //if (count == 0 && !(ngMove is null) && new Decided(ways[i].Agent1Way, ways[i].Agent2Way).Equals(ngMove)) { continue; }	//競合手を避ける場合
+                if (count == 0 && !(ngMove is null) && (ways[i].Agent1Way.Equals(ngMove.MeAgent1) || ways[i].Agent2Way.Equals(ngMove.MeAgent2))) { continue; }    //2人とも競合手とは違う手を指す
+                
                 SearchState nextState = state;
                 nextState.Move(ways[i].Agent1Way, ways[i].Agent2Way);
-                int res = -NegaMax(deepness - 1, nextState, -beta, -alpha, count + 1, evaluator, ngMove);
+                int res = -NegaMax(deepness - 1, nextState, -beta, -alpha, count + 1, evaluator, ngMove, greedyDepth);
                 if (alpha < res)
                 {
                     alpha = res;

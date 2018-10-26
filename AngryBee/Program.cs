@@ -15,7 +15,12 @@ namespace AngryBee
 			MCTProcon29Protocol.AIFramework.AIBase AI = null;
 
 			if (aiType == 0) { AI = new AI.AhoAI(); }
-			if (aiType == 1) { AI = new AI.NaottiAI(); }
+			if (aiType == 1) {
+                int greedyMaxDepth = 4;
+                Console.WriteLine("探索延長の最大手数(推奨値 = 4)");
+                greedyMaxDepth = int.Parse(Console.ReadLine());
+                AI = new AI.NaottiAI(1, greedyMaxDepth);
+            }
 			if (aiType == 2) {
 				int greedyMaxDepth = 0;
 				int KyogoTurn = 100;

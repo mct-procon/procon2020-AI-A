@@ -58,6 +58,62 @@ namespace AngryBee.Search
             return Result;
 		}
 
+        //タイルスコア最大の手を返す（MakeMoves -> SortMovesで0番目に来る手を返す）探索延長を高速化するために使用。
+        public Way MakeGreedyMove(sbyte[,] ScoreBoard, VelocityPoint[] WayEnumrator)
+        {
+            int i, j;
+            int score1 = -100, score2 = -100;
+            Way way = new Way();
+
+            //自分2人が被るかのチェックをしないで、最大の組み合わせを探す
+            for (i = 0; i < WayEnumrator.Length; i++)
+            {
+                Point next1 = Me.Agent1 + WayEnumrator[i];
+                if (next1.X >= MeBoard.Width || next1.Y >= MeBoard.Height) continue;
+                if (next1 == Enemy.Agent1 || next1 == Enemy.Agent2) continue;
+                int score = (MeBoard[next1] == true) ? 0 : ScoreBoard[next1.X, next1.Y];
+                if (score1 < score) { score1 = score; way.Agent1Way = WayEnumrator[i]; }
+            }
+
+            for (i = 0; i < WayEnumrator.Length; i++)
+            {
+                Point next2 = Me.Agent2 + WayEnumrator[i];
+                if (next2.X >= MeBoard.Width || next2.Y >= MeBoard.Height) continue;
+                if (next2 == Enemy.Agent1 || next2 == Enemy.Agent2) continue;
+                int score = (MeBoard[next2] == true) ? 0 : ScoreBoard[next2.X, next2.Y];
+                if (score2 < score) { score2 = score; way.Agent2Way = WayEnumrator[i]; }
+            }
+
+            if (score1 > -100 && score2 > -100 && (Me.Agent1 + way.Agent1Way) != (Me.Agent2 + way.Agent2Way)) return way;
+
+            //真面目に探索する
+            int maxScore = -100;
+            for (i = 0; i < WayEnumrator.Length; i++)
+            {
+                Point next1 = Me.Agent1 + WayEnumrator[i];
+                if (next1.X >= MeBoard.Width || next1.Y >= MeBoard.Height) continue;
+                if (Enemy.Agent1 == next1) continue;
+                if (Enemy.Agent2 == next1) continue;
+                int scoreA = (MeBoard[next1] == true) ? 0 : ScoreBoard[next1.X, next1.Y];
+                for (j = 0; j < WayEnumrator.Length; j++)
+                {
+                    Point next2 = Me.Agent2 + WayEnumrator[j];
+                    if (next2.X >= MeBoard.Width || next2.Y >= MeBoard.Height) continue;
+                    if (Enemy.Agent1 == next2) continue;
+                    if (Enemy.Agent2 == next2) continue;
+                    if (next1 == next2) continue;
+                    int scoreB = (MeBoard[next2] == true) ? 0 : ScoreBoard[next2.X, next2.Y];
+                    if (maxScore < scoreA + scoreB)
+                    {
+                        maxScore = scoreA + scoreB;
+                        way.Agent1Way = WayEnumrator[i];
+                        way.Agent2Way = WayEnumrator[j];
+                    }
+                }
+            }
+            return way;
+        }
+
 		//Search Stateを更新する (MeとEnemyの入れ替えも忘れずに）（呼び出し時の前提：Validな動きである）
 		public void Move(VelocityPoint way1, VelocityPoint way2)
 		{
