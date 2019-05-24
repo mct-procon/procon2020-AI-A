@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using MCTProcon29Protocol;
+using AngryBee.Boards;
 
 namespace AngryBee.PointEvaluator
 {
@@ -20,7 +21,7 @@ namespace AngryBee.PointEvaluator
                 this.y = y;
             }
         }
-        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardSmallBigger Painted, int Turn)
+        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardSmallBigger Painted, int Turn, Player Me, Player Enemy)
         {
             ColoredBoardSmallBigger checker = new ColoredBoardSmallBigger(Painted.Width, Painted.Height);
             int result = 0;

@@ -75,7 +75,7 @@ namespace AngryBee.AI
 			}
 			if (i == K)
 			{
-				int score = PointEvaluator_Normal.Calculate(ScoreBoard, state.MeBoard, 0) - PointEvaluator_Normal.Calculate(ScoreBoard, state.EnemyBoard, 0);
+				int score = PointEvaluator_Normal.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - PointEvaluator_Normal.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Me, state.Enemy);
 				if (score <= 0)
 				{
 					ngMove = historyDecides[historyDecides.Count - 1];
@@ -111,7 +111,7 @@ namespace AngryBee.AI
 					SortMoves(ScoreBoard, state, moves, dp.Length - 1);
 					state.Move(moves[0].Agent1Way, moves[0].Agent2Way);
 				}
-                int eval = evaluator.Calculate(ScoreBoard, state.MeBoard, 0) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0);
+                int eval = evaluator.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me);
 				if (greedyDepth % 2 == 1) { return -eval; }
 				return eval;
 			}

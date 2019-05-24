@@ -88,7 +88,7 @@ namespace AngryBee.AI
         {
             if (depth == 0)
             {
-                return PointEvaluator.Calculate(ScoreBoard, MeBoard, 0);
+                return PointEvaluator.Calculate(ScoreBoard, MeBoard, 0, Me, Enemy);
             }
 
             int result = 0;

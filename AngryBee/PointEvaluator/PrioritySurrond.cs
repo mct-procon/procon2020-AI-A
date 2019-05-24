@@ -13,7 +13,7 @@ namespace AngryBee.PointEvaluator
     {
         readonly int[] DistanceX = { 0, 1, 0, -1 };
         readonly int[] DistanceY = { 1, 0, -1, 0 };
-        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardSmallBigger Painted, int Turn)
+        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardSmallBigger Painted, int Turn, Player Me, Player Enemy)
         {
             ColoredBoardSmallBigger checker = new ColoredBoardSmallBigger(Painted.Width, Painted.Height);
             int result = 0;

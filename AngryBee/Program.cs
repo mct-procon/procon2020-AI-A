@@ -9,7 +9,7 @@ namespace AngryBee
         public static void Main(string[] args)
 		{
 			int aiType = 0;
-			Console.WriteLine("AIの種類を入力(0:Aho, 1:Naotti, 2:Test, 3:TilePointAI)");
+			Console.WriteLine("AIの種類を入力(0:Aho, 1:Naotti, 2:Test, 3:TilePointAI, 4:AokiAI)");
 			aiType = int.Parse(Console.ReadLine());
 
 			MCTProcon29Protocol.AIFramework.AIBase AI = null;
@@ -32,8 +32,15 @@ namespace AngryBee
 				AI = new AI.TestAI(1, greedyMaxDepth, KyogoTurn);
 			}
 			if (aiType == 3) { AI = new AI.TilePointAI(); }
+            if (aiType == 4)
+            {
+                int greedyMaxDepth = 4;
+                Console.WriteLine("探索延長の最大手数(推奨値 = 4)");
+                greedyMaxDepth = int.Parse(Console.ReadLine());
+                AI = new AI.AokiAI(1, greedyMaxDepth);
+            }
 
-			int portId;
+            int portId;
 
             Console.CancelKeyPress +=
                 (o, e) =>

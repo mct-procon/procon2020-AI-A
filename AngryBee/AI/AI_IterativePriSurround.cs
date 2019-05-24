@@ -58,7 +58,7 @@ namespace AngryBee.AI
 
             if (deepness == 0)
             {
-                return PointEvaluatorPriSurround.Calculate(ScoreBoard, MeBoard, 0) - PointEvaluator.Calculate(ScoreBoard, EnemyBoard, 0);
+                return PointEvaluatorPriSurround.Calculate(ScoreBoard, MeBoard, 0, Me, Enemy) - PointEvaluator.Calculate(ScoreBoard, EnemyBoard, 0, Enemy, Me);
             }
 
             int result = alpha;

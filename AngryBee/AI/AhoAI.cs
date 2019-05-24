@@ -69,7 +69,7 @@ namespace AngryBee.AI
 		{
 			if (deepness == 0)
 			{
-				return evaluator.Calculate(ScoreBoard, state.MeBoard, 0) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0);
+				return evaluator.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me);
 			}
 
 			Ways ways = state.MakeMoves(WayEnumerator);
