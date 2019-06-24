@@ -11,6 +11,7 @@ namespace AngryBee.AI
     public class NaottiAI : MCTProcon29Protocol.AIFramework.AIBase
     {
         PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
+        //PointEvaluator.Base PointEvaluator_Distance = new PointEvaluator.Distance();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
         VelocityPoint[] WayEnumerator = { (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1) };
         ObjectPool<Ways> WaysPool = new ObjectPool<Ways>();
