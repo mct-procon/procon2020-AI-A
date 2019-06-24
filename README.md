@@ -8,6 +8,6 @@
 > Memory : more than 2GBytes  
   
 > Softwares  
-> VisualStudio 2017 Update 9 or later  
+> VisualStudio 2017 Update 11 or later  
 > .Net Core 2.1 or later  
 > C# 7.3 or later  
