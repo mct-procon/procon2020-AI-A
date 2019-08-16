@@ -2,13 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon29Protocol.Methods;
-using MCTProcon29Protocol;
+using MCTProcon30Protocol.Methods;
+using MCTProcon30Protocol;
 using AngryBee.Search;
 
 namespace AngryBee.AI
 {
-	public class AhoAI : MCTProcon29Protocol.AIFramework.AIBase
+	public class AhoAI : MCTProcon30Protocol.AIFramework.AIBase
 	{
 		PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
 		PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();

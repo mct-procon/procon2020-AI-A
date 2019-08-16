@@ -1,21 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon29Protocol.Methods;
-using MCTProcon29Protocol;
+using MCTProcon30Protocol.Methods;
+using MCTProcon30Protocol;
 using AngryBee.Boards;
 
 namespace AngryBee.Search
 {
     public struct SearchState
     {
-		public ColoredBoardSmallBigger MeBoard;
-		public ColoredBoardSmallBigger EnemyBoard;
+		public ColoredBoardNormalSmaller MeBoard;
+		public ColoredBoardNormalSmaller EnemyBoard;
 		public Player Me;
 		public Player Enemy;
         public ObjectPool<Ways> WaysPool;
 
-		public SearchState(in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, ObjectPool<Ways> waysPool)
+		public SearchState(in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Player Me, in Player Enemy, ObjectPool<Ways> waysPool)
 		{
 			this.MeBoard = MeBoard;
 			this.EnemyBoard = EnemyBoard;

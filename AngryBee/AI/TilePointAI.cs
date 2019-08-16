@@ -2,13 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon29Protocol.Methods;
-using MCTProcon29Protocol;
+using MCTProcon30Protocol.Methods;
+using MCTProcon30Protocol;
 using AngryBee.Search;
 
 namespace AngryBee.AI
 {
-	public class TilePointAI : MCTProcon29Protocol.AIFramework.AIBase
+	public class TilePointAI : MCTProcon30Protocol.AIFramework.AIBase
 	{
 		VelocityPoint[] WayEnumerator1 = { (1, -1), (1, 1), (-1, 1), (-1, -1) };
 		VelocityPoint[] WayEnumerator2 = { (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1) };

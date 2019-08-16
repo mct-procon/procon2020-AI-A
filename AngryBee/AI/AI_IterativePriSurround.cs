@@ -2,8 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon29Protocol.Methods;
-using MCTProcon29Protocol;
+using MCTProcon30Protocol.Methods;
+using MCTProcon30Protocol;
 
 namespace AngryBee.AI
 {
@@ -11,7 +11,7 @@ namespace AngryBee.AI
     /// 反復深化法とminimax法を用いて、最高得点をとれるパターンを計算するAI。
     /// 評価関数の計算に[自軍の囲んでいる陣地数*50]を加えているので、ひたすら囲みを増やそうと動く。(はず)
     /// </summary>
-    public class AI_IterativePriSurround : MCTProcon29Protocol.AIFramework.AIBase
+    public class AI_IterativePriSurround : MCTProcon30Protocol.AIFramework.AIBase
     {
         Rule.MovableChecker Checker = new Rule.MovableChecker();
         PointEvaluator.Normal PointEvaluator = new PointEvaluator.Normal();
@@ -27,7 +27,7 @@ namespace AngryBee.AI
         private DP[] dp = new DP[100];
         private int deepness;
 
-        public void IterativePriSurround(sbyte[,] ScoreBoard, ColoredBoardSmallBigger MeBoard, ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy)
+        public void IterativePriSurround(sbyte[,] ScoreBoard, ColoredBoardNormalSmaller MeBoard, ColoredBoardNormalSmaller EnemyBoard, in Player Me, in Player Enemy)
         {
             VelocityPoint[] WayEnumerator = { (1, 1), (1, -1), (-1, 1), (-1, -1), (0, 1), (-1, 0), (1, 0), (0, -1) };
 
@@ -52,7 +52,7 @@ namespace AngryBee.AI
             SolverResult = BestWay;
         }
 
-        int Max(int deepness, in VelocityPoint[] WayEnumerator, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, int alpha, int beta, in sbyte[,] ScoreBoard)
+        int Max(int deepness, in VelocityPoint[] WayEnumerator, in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Player Me, in Player Enemy, int alpha, int beta, in sbyte[,] ScoreBoard)
         {
             if (CancellationToken.IsCancellationRequested) { return 0; }
 
@@ -120,7 +120,7 @@ namespace AngryBee.AI
             return result;
         }
 
-        int Mini(int deepness, in VelocityPoint[] WayEnumerator, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, int alpha, int beta, in sbyte[,] ScoreBoard)
+        int Mini(int deepness, in VelocityPoint[] WayEnumerator, in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Player Me, in Player Enemy, int alpha, int beta, in sbyte[,] ScoreBoard)
         {
             deepness--;
             if (CancellationToken.IsCancellationRequested)
@@ -164,7 +164,7 @@ namespace AngryBee.AI
             return result;
         }
 
-        Tuple<ColoredBoardSmallBigger, ColoredBoardSmallBigger, Player, Player> Move(ColoredBoardSmallBigger meBoard, ColoredBoardSmallBigger enemyBoard, Player me, Player newme, Player enemy)
+        Tuple<ColoredBoardNormalSmaller, ColoredBoardNormalSmaller, Player, Player> Move(ColoredBoardNormalSmaller meBoard, ColoredBoardNormalSmaller enemyBoard, Player me, Player newme, Player enemy)
         {
             var movable = Checker.MovableCheck(meBoard, enemyBoard, me, newme, enemy);
 
@@ -195,7 +195,7 @@ namespace AngryBee.AI
                 meBoard[me.Agent1] = true;
                 meBoard[me.Agent2] = true;
             }
-            return new Tuple<ColoredBoardSmallBigger, ColoredBoardSmallBigger, Player, Player>(meBoard, enemyBoard, me, enemy);
+            return new Tuple<ColoredBoardNormalSmaller, ColoredBoardNormalSmaller, Player, Player>(meBoard, enemyBoard, me, enemy);
         }
 
         protected override void EndGame(GameEnd end)

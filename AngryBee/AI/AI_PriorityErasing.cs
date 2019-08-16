@@ -2,8 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon29Protocol.Methods;
-using MCTProcon29Protocol;
+using MCTProcon30Protocol.Methods;
+using MCTProcon30Protocol;
 
 namespace AngryBee.AI
 {
@@ -11,7 +11,7 @@ namespace AngryBee.AI
     /// 深さを制限した深さ優先探索を用いて、最高得点をとれるパターンを計算するAI。
     /// タイルを除去するときの加点のみを3倍にして計算しているので、近くに敵のタイルがあれば、妨害を優先して動く。
     /// </summary>
-    public class AI_PriorityErasing : MCTProcon29Protocol.AIFramework.AIBase
+    public class AI_PriorityErasing : MCTProcon30Protocol.AIFramework.AIBase
     {
         Rule.MovableChecker Checker = new Rule.MovableChecker();
         PointEvaluator.Normal PointEvaluator = new PointEvaluator.Normal();
@@ -22,9 +22,9 @@ namespace AngryBee.AI
 
         public  int MaxDepth { get; set; }
 
-        void SearchPriorityErase(int MaxDepth, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, in sbyte[,] ScoreBoard)
+        void SearchPriorityErase(int MaxDepth, in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Player Me, in Player Enemy, in sbyte[,] ScoreBoard)
         {
-            SolverResult = new Decided();
+            SolverResult = new Decision();
             int maxScore = 0;
             for (int i = 0; i < WayEnumerator.Length; ++i)
                 for (int m = 0; m < WayEnumerator.Length; ++m)
@@ -84,7 +84,7 @@ namespace AngryBee.AI
                 }
         }
 
-        int Max(int depth, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, in sbyte[,] ScoreBoard)
+        int Max(int depth, in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Player Me, in Player Enemy, in sbyte[,] ScoreBoard)
         {
             if (depth == 0)
             {
@@ -142,7 +142,7 @@ namespace AngryBee.AI
             return result;
         }
 
-        //Decided Deside(in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy)
+        //Decided Deside(in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Player Me, in Player Enemy)
         //{
         //    var decided = new Decided();
         //    //Agent1
@@ -153,7 +153,7 @@ namespace AngryBee.AI
         //    return decided;
         //}
 
-        //Point SearchNextErase(in int AgentNum, in BoardSetting Setting, in int ErasingMinScore, in ColoredBoardSmallBigger MeBoard, in ColoredBoardSmallBigger EnemyBoard, in Player Me, in Player Enemy, in sbyte[,] ScoreBoard)
+        //Point SearchNextErase(in int AgentNum, in BoardSetting Setting, in int ErasingMinScore, in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Player Me, in Player Enemy, in sbyte[,] ScoreBoard)
         //{
         //    Point agent;
         //    if (AgentNum == 0)

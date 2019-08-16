@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon29Protocol;
+using MCTProcon30Protocol;
 
 namespace AngryBee.Boards
 {
@@ -66,7 +66,7 @@ namespace AngryBee.Boards
         //    if (count < 64)
         //        return new ColoredBoardSmall((ushort)Width, (ushort)Height);
         //    else if (Width < 16 && Height < 16)
-        //        return new ColoredBoardSmallBigger((ushort)Width, (ushort)Height);
+        //        return new ColoredBoardNormalSmaller((ushort)Width, (ushort)Height);
         //    else if (Width < 32 && Height < 32)
         //        return new ColoredBoardNormalSmaller((ushort)Width, (ushort)Height);
         //    else if (Width < 64 && Height < 64)

@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.Text;
 using AngryBee.Boards;
 using System.Runtime.Intrinsics.X86;
-using MCTProcon29Protocol;
+using MCTProcon30Protocol;
 
 namespace AngryBee.PointEvaluator
 {
     public class Normal : Base
     {
-        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardSmallBigger Painted, int Turn, Player Me, Player Enemy)
+        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, int Turn, Player Me, Player Enemy)
         {
-            ColoredBoardSmallBigger checker = new ColoredBoardSmallBigger(Painted.Width, Painted.Height);
+            ColoredBoardNormalSmaller checker = new ColoredBoardNormalSmaller(Painted.Width, Painted.Height);
             int result = 0;
             uint width = Painted.Width;
             uint height = Painted.Height;
@@ -36,7 +36,7 @@ namespace AngryBee.PointEvaluator
         }
 
 		//uint[] myStack = new uint[1024];	//x, yの順で入れる. y, xの順で取り出す. width * height以上のサイズにする.
-        public unsafe void BadSpaceFill(ref ColoredBoardSmallBigger Checker, uint width, uint height)
+        public unsafe void BadSpaceFill(ref ColoredBoardNormalSmaller Checker, uint width, uint height)
         {
             unchecked
             {
@@ -117,7 +117,7 @@ namespace AngryBee.PointEvaluator
 		}
 
         [Obsolete("too slow")]
-        public int Calculate(sbyte[,] ScoreBoard, in ColoredBoardSmallBigger Painted, ref ColoredBoardSmallBigger Checker, uint x, uint y, uint width, uint height)
+        public int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, ref ColoredBoardNormalSmaller Checker, uint x, uint y, uint width, uint height)
         {
             unchecked
             {

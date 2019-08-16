@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon29Protocol;
+using MCTProcon30Protocol;
 using AngryBee.Boards;
 
 namespace AngryBee.PointEvaluator
 {
     class Distance : Base
     {
-        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardSmallBigger Painted, int Turn, Player Me, Player Enemy)
+        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, int Turn, Player Me, Player Enemy)
         {
-            ColoredBoardSmallBigger checker = new ColoredBoardSmallBigger(Painted.Width, Painted.Height);   //!checker == 領域
+            ColoredBoardNormalSmaller checker = new ColoredBoardNormalSmaller(Painted.Width, Painted.Height);   //!checker == 領域
             int result = 0;
             uint width = Painted.Width;
             uint height = Painted.Height;
@@ -73,7 +73,7 @@ namespace AngryBee.PointEvaluator
         }
 
         //囲いを見つける
-        public unsafe void BadSpaceFill(ref ColoredBoardSmallBigger Checker, uint width, uint height)
+        public unsafe void BadSpaceFill(ref ColoredBoardNormalSmaller Checker, uint width, uint height)
         {
             unchecked
             {

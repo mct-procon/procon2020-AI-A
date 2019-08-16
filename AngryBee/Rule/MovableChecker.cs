@@ -2,13 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon29Protocol;
+using MCTProcon30Protocol;
 
 namespace AngryBee.Rule
 {
     public class MovableChecker
     {
-        public MovableResult MovableCheck(in ColoredBoardSmallBigger MeField, in ColoredBoardSmallBigger EnemyField, Boards.Player oldMe, Boards.Player Me, Boards.Player Enemy )
+        public MovableResult MovableCheck(in ColoredBoardNormalSmaller MeField, in ColoredBoardNormalSmaller EnemyField, Boards.Player oldMe, Boards.Player Me, Boards.Player Enemy )
         {
             MovableResult result = new MovableResult();
 

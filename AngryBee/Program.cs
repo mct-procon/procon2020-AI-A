@@ -1,6 +1,6 @@
 ﻿using System;
-using MCTProcon29Protocol;
-using MCTProcon29Protocol.Methods;
+using MCTProcon30Protocol;
+using MCTProcon30Protocol.Methods;
 
 namespace AngryBee
 {
@@ -12,7 +12,7 @@ namespace AngryBee
 			Console.WriteLine("AIの種類を入力(0:Aho, 1:Naotti, 2:Test, 3:TilePointAI, 4:AokiAI)");
 			aiType = int.Parse(Console.ReadLine());
 
-			MCTProcon29Protocol.AIFramework.AIBase AI = null;
+			MCTProcon30Protocol.AIFramework.AIBase AI = null;
 
 			if (aiType == 0) { AI = new AI.AhoAI(); }
 			if (aiType == 1) {
@@ -63,8 +63,8 @@ namespace AngryBee
             var ai = new AI.AI();
             var game = Boards.BoardSetting.Generate(height, width);
 
-            var meBoard = new Boards.ColoredBoardSmallBigger(height, width);
-            var enemyBoard = new Boards.ColoredBoardSmallBigger(height, width);
+            var meBoard = new Boards.ColoredBoardNormalSmaller(height, width);
+            var enemyBoard = new Boards.ColoredBoardNormalSmaller(height, width);
 
             meBoard[game.me.Agent1] = true;
             meBoard[game.me.Agent2] = true;

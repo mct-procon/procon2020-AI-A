@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AngryBee.Boards;
 using System.Runtime.Intrinsics.X86;
-using MCTProcon29Protocol;
+using MCTProcon30Protocol;
 
 namespace AngryBee.PointEvaluator
 {
@@ -13,9 +13,9 @@ namespace AngryBee.PointEvaluator
     {
         readonly int[] DistanceX = { 0, 1, 0, -1 };
         readonly int[] DistanceY = { 1, 0, -1, 0 };
-        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardSmallBigger Painted, int Turn, Player Me, Player Enemy)
+        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, int Turn, Player Me, Player Enemy)
         {
-            ColoredBoardSmallBigger checker = new ColoredBoardSmallBigger(Painted.Width, Painted.Height);
+            ColoredBoardNormalSmaller checker = new ColoredBoardNormalSmaller(Painted.Width, Painted.Height);
             int result = 0;
             uint width = Painted.Width;
             uint height = Painted.Height;
@@ -42,7 +42,7 @@ namespace AngryBee.PointEvaluator
         }
 
         //uint[] myStack = new uint[1024];	//x, yの順で入れる. y, xの順で取り出す. width * height以上のサイズにする.
-        public unsafe void BadSpaceFill(ref ColoredBoardSmallBigger Checker, uint width, uint height)
+        public unsafe void BadSpaceFill(ref ColoredBoardNormalSmaller Checker, uint width, uint height)
         {
             unchecked
             {
@@ -123,7 +123,7 @@ namespace AngryBee.PointEvaluator
             }
         }
 
-        int CountSurrounded(ColoredBoardSmallBigger Checker, uint width, uint height)
+        int CountSurrounded(ColoredBoardNormalSmaller Checker, uint width, uint height)
         {
             int count = 0;
             for (uint y = 0; y < height; y++)
@@ -140,7 +140,7 @@ namespace AngryBee.PointEvaluator
             return count;
         }
 
-        bool FillChecker(ref ColoredBoardSmallBigger Checker, uint x, uint y, in uint Width, in uint Height)
+        bool FillChecker(ref ColoredBoardNormalSmaller Checker, uint x, uint y, in uint Width, in uint Height)
         {
             if (x < 0 || x >= Width || y < 0 || y >= Height) return false;
             if (Checker[x, y]) return true;
