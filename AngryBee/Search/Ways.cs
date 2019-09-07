@@ -23,13 +23,11 @@ namespace AngryBee.Search
     public struct Way : IComparable
     {
         public int Point { get; set; }
-        public VelocityPoint Agent1Way { get; set; }
-        public VelocityPoint Agent2Way { get; set; }
+        public Unsafe8Array<VelocityPoint> AgentWays { get; set; }
 
-        public Way(VelocityPoint a1, VelocityPoint a2)
+        public Way(in Unsafe8Array<VelocityPoint> agentWays)
         {
-            Agent1Way = a1;
-            Agent2Way = a2;
+            AgentWays = agentWays;
             Point = 0;
         }
 

@@ -9,7 +9,7 @@ namespace AngryBee.PointEvaluator
 {
 	public class AreaCount : Base
 	{
-		public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, int Turn, Player Me, Player Enemy)
+		public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, int Turn, Unsafe8Array<Point> Me, Unsafe8Array<Point> Enemy)
 		{
 			ColoredBoardNormalSmaller checker = new ColoredBoardNormalSmaller(Painted.Width, Painted.Height);
 			int result = 0;
@@ -25,7 +25,7 @@ namespace AngryBee.PointEvaluator
 					}
 				}
 
-			BadSpaceFill(ref checker, width, height);
+			BadSpaceFill(ref checker, (byte)width, (byte)height);
 
 			for (uint x = 0; x < width; ++x)
 				for (uint y = 0; y < height; ++y)
@@ -38,17 +38,16 @@ namespace AngryBee.PointEvaluator
 			return result + count * 4;
 		}
 
-		//uint[] myStack = new uint[1024];	//x, yの順で入れる. y, xの順で取り出す. width * height以上のサイズにする.
-		public unsafe void BadSpaceFill(ref ColoredBoardNormalSmaller Checker, uint width, uint height)
+		public unsafe void BadSpaceFill(ref ColoredBoardNormalSmaller Checker, byte width, byte height)
 		{
 			unchecked
 			{
-				Point* myStack = stackalloc Point[12 * 12];
+				Point* myStack = stackalloc Point[20 * 20];
 
 				Point point;
-				uint x, y, searchTo = 0, myStackSize = 0;
+				byte x, y, searchTo = 0, myStackSize = 0;
 
-				searchTo = height - 1;
+				searchTo = (byte)(height - 1);
 				for (x = 0; x < width; x++)
 				{
 					if (!Checker[x, 0])
@@ -63,7 +62,7 @@ namespace AngryBee.PointEvaluator
 					}
 				}
 
-				searchTo = width - 1;
+				searchTo = (byte)(width - 1);
 				for (y = 0; y < height; y++)
 				{
 					if (!Checker[0, y])
@@ -85,7 +84,7 @@ namespace AngryBee.PointEvaluator
 					y = point.Y;
 
 					//左方向
-					searchTo = x - 1;
+					searchTo = (byte)(x - 1);
 					if (searchTo < width && !Checker[searchTo, y])
 					{
 						myStack[myStackSize++] = new Point(searchTo, y);
@@ -93,7 +92,7 @@ namespace AngryBee.PointEvaluator
 					}
 
 					//下方向
-					searchTo = y + 1;
+					searchTo = (byte)(y + 1);
 					if (searchTo < height && !Checker[x, searchTo])
 					{
 						myStack[myStackSize++] = new Point(x, searchTo);
@@ -101,7 +100,7 @@ namespace AngryBee.PointEvaluator
 					}
 
 					//右方向
-					searchTo = x + 1;
+					searchTo = (byte)(x + 1);
 					if (searchTo < width && !Checker[searchTo, y])
 					{
 						myStack[myStackSize++] = new Point(searchTo, y);
@@ -109,7 +108,7 @@ namespace AngryBee.PointEvaluator
 					}
 
 					//上方向
-					searchTo = y - 1;
+					searchTo = (byte)(y - 1);
 					if (searchTo < height && !Checker[x, searchTo])
 					{
 						myStack[myStackSize++] = new Point(x, searchTo);
@@ -119,76 +118,11 @@ namespace AngryBee.PointEvaluator
 			}
 		}
 
-		[Obsolete("too slow")]
-		public int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, ref ColoredBoardNormalSmaller Checker, uint x, uint y, uint width, uint height)
-		{
-			unchecked
-			{
-				if (Checker[x, y]) return int.MinValue;
-
-				Checker[x, y] = true;
-
-				uint Right = x + 1u;
-				uint Left = x - 1u;
-
-				if (Right >= width || Left >= width)
-					return int.MinValue;
-
-				uint Bottom = y + 1u;
-				uint Top = y - 1u;
-
-				if (Top >= height || Bottom >= height)
-					return int.MinValue;
-
-				int result = 0;
-
-				if (!Painted[x, Top])
-				{
-					int cache = Calculate(ScoreBoard, Painted, ref Checker, x, Top, width, height);
-					if (cache == int.MinValue)
-						return int.MinValue;
-					else
-						result += cache;
-				}
-
-				if (!Painted[x, Bottom])
-				{
-					int cache = Calculate(ScoreBoard, Painted, ref Checker, x, Bottom, width, height);
-					if (cache == int.MinValue)
-						return int.MinValue;
-					else
-						result += cache;
-				}
-
-				if (!Painted[Left, y])
-				{
-					int cache = Calculate(ScoreBoard, Painted, ref Checker, Left, y, width, height);
-					if (cache == int.MinValue)
-						return int.MinValue;
-					else
-						result += cache;
-				}
-
-				if (!Painted[Right, y])
-				{
-					int cache = Calculate(ScoreBoard, Painted, ref Checker, Right, y, width, height);
-					if (cache == int.MinValue)
-						return int.MinValue;
-					else
-						result += cache;
-				}
-
-				result += Math.Abs(ScoreBoard[x, y]);
-
-				return result;
-			}
-		}
-
 		private int CalcAreaCount(ColoredBoardNormalSmaller Checker)
 		{
-			uint i, j;
-			uint height = Checker.Height;
-			uint width = Checker.Width;
+			byte i, j;
+			byte height = (byte)Checker.Height;
+			byte width = (byte)Checker.Width;
 			int cnt = 0;
 
 			//ラベリング処理
@@ -200,9 +134,9 @@ namespace AngryBee.PointEvaluator
 
 					unsafe
 					{
-						Point* myStack = stackalloc Point[12 * 12];
+						Point* myStack = stackalloc Point[20 * 20];
 						Point point;
-						uint x, y, searchTo = 0, myStackSize = 0;
+						byte x, y, searchTo = 0, myStackSize = 0;
 
 						myStack[myStackSize++] = new Point(j, i);
 						Checker[new Point(j, i)] = true;
@@ -214,7 +148,7 @@ namespace AngryBee.PointEvaluator
 							y = point.Y;
 
 							//左方向
-							searchTo = x - 1;
+							searchTo = (byte)(x - 1);
 							if (searchTo < width && !Checker[searchTo, y])
 							{
 								myStack[myStackSize++] = new Point(searchTo, y);
@@ -222,7 +156,7 @@ namespace AngryBee.PointEvaluator
 							}
 
 							//下方向
-							searchTo = y + 1;
+							searchTo = (byte)(y + 1);
 							if (searchTo < height && !Checker[x, searchTo])
 							{
 								myStack[myStackSize++] = new Point(x, searchTo);
@@ -230,7 +164,7 @@ namespace AngryBee.PointEvaluator
 							}
 
 							//右方向
-							searchTo = x + 1;
+							searchTo = (byte)(x + 1);
 							if (searchTo < width && !Checker[searchTo, y])
 							{
 								myStack[myStackSize++] = new Point(searchTo, y);
@@ -238,7 +172,7 @@ namespace AngryBee.PointEvaluator
 							}
 
 							//上方向
-							searchTo = y - 1;
+							searchTo = (byte)(y - 1);
 							if (searchTo < height && !Checker[x, searchTo])
 							{
 								myStack[myStackSize++] = new Point(x, searchTo);

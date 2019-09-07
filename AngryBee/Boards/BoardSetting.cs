@@ -20,7 +20,7 @@ namespace AngryBee.Boards
             this.Height = Height;
         }
 
-        public static (BoardSetting setting, Player me, Player enemy) Generate(byte height = 12, byte width = 12)
+        public static (BoardSetting setting, Player me, Player enemy) Generate(byte height = 20, byte width = 20)
         {
             if ((width & 0b1) == 1)
                 throw new ArgumentException("width must be an odd number.", nameof(width));
@@ -46,16 +46,16 @@ namespace AngryBee.Boards
 
             int heightDiv2 = height / 2;
 
-            ushort agent1_y = (ushort)rand.Next(heightDiv2);
-            ushort agent2_y = (ushort)(rand.Next(heightDiv2) + heightDiv2);
+            byte agent1_y = (byte)rand.Next(heightDiv2);
+            byte agent2_y = (byte)(rand.Next(heightDiv2) + heightDiv2);
 
             int agent1_x = rand.Next(widthDiv2);
             int agent2_x = rand.Next(widthDiv2);
 
             return (
                 result,
-                new Player(new Point((ushort)agent1_x, agent1_y), new Point((ushort)agent2_x, agent2_y)),
-                new Player(new Point((ushort)(width - agent1_x - 1), agent1_y), new Point((ushort)(width - agent2_x - 1), agent2_y))
+                new Player(new Point((byte)agent1_x, agent1_y), new Point((byte)agent2_x, agent2_y)),
+                new Player(new Point((byte)(width - agent1_x - 1), agent1_y), new Point((byte)(width - agent2_x - 1), agent2_y))
                 );
         }
 

@@ -37,8 +37,8 @@ namespace AngryBee.AI
         public int StartDepth { get; set; } = 1;
         public int GreedyMaxDepth { get; } = 0;      //評価関数を呼び出す前に, 最大で深さいくつ分まで貪欲するか？
 		public List<SearchState> historyStates { get; } = null;
-		public List<Decided> historyDecides { get; } = null;
-		public Decided ngMove = null;
+		public List<Decision> historyDecides { get; } = null;
+		public Decision ngMove = null;
 		public int KyogoTurn { get; } = 100;
 
 		public TestAI(int startDepth = 1, int greedyMaxDepth = 0, int KyogoTurn = 100)
@@ -48,7 +48,7 @@ namespace AngryBee.AI
             StartDepth = startDepth;
             GreedyMaxDepth = greedyMaxDepth;
 			historyStates = new List<SearchState>();
-			historyDecides = new List<Decided>();
+			historyDecides = new List<Decision>();
 			this.KyogoTurn = KyogoTurn;
 		}
 
@@ -88,7 +88,7 @@ namespace AngryBee.AI
             {
                 NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, Math.Min(maxDepth - deepness, GreedyMaxDepth));
                 if (CancellationToken.IsCancellationRequested == false)
-                    SolverResult = new Decided(dp[0].Agent1Way, dp[0].Agent2Way);
+                    SolverResult = new Decision(Unsafe8Array<VelocityPoint>.Create(dp[0].Agent1Way, dp[0].Agent2Way));
                 else
                     break;
                 Log("[SOLVER] deepness = {0}", deepness);
@@ -148,7 +148,7 @@ namespace AngryBee.AI
         //ルール2では, タイル除去によっても「タイルポイント」が得られるとして計算する。
         private void SortMoves(sbyte[,] ScoreBoard, SearchState state, Ways way, int deep)
         {
-            var Killer = dp[deep].Score == int.MinValue ? new Player(new Point(114, 514), new Point(114, 514)) : new Player(state.Me.Agent1 + dp[deep].Agent1Way, state.Me.Agent2 + dp[deep].Agent2Way);
+            var Killer = dp[deep].Score == int.MinValue ? new Player(new Point(114, 191), new Point(114, 191)) : new Player(state.Me.Agent1 + dp[deep].Agent1Way, state.Me.Agent2 + dp[deep].Agent2Way);
 
             for (int i = 0; i < way.Count; i++)
             {

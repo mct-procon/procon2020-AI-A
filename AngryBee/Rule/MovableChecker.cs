@@ -8,54 +8,39 @@ namespace AngryBee.Rule
 {
     public class MovableChecker
     {
-        public MovableResult MovableCheck(in ColoredBoardNormalSmaller MeField, in ColoredBoardNormalSmaller EnemyField, Boards.Player oldMe, Boards.Player Me, Boards.Player Enemy )
+        public MovableResult MovableCheck(in ColoredBoardNormalSmaller MeField, in ColoredBoardNormalSmaller EnemyField, Unsafe8Array<Point> oldMe, Unsafe8Array<Point> Me, Unsafe8Array<Point> Enemy, int AgentsCount )
         {
             MovableResult result = new MovableResult();
 
             uint width = MeField.Width, height = MeField.Height;
 
-            if (Me.Agent1.X >= width || Me.Agent1.Y >= height)
+            bool notMovable = false;
+            for(int i = 0; i < AgentsCount; ++i)
             {
-                result.Me1 = MovableResultType.OutOfField;
-                return result;
+                if (Me[i].X >= width || Me[i].Y >= height)
+                {
+                    result[i] = MovableResultType.OutOfField;
+                    return result;
+                }
+                if (Me[i] == Enemy[i] || Me[i] == Enemy[i])
+                {
+                    result[i] = MovableResultType.EnemyIsHere;
+                    return result;
+                }
+                for(int j = 0; j < AgentsCount; ++j)
+                    notMovable |= Me[i] == Me[j];
             }
-            if (Me.Agent2.X >= width || Me.Agent2.Y >= height)
+            if(notMovable)
             {
-                result.Me2 = MovableResultType.OutOfField;
-                return result;
-            }
-
-            if(Me.Agent1 == Enemy.Agent1 || Me.Agent1 == Enemy.Agent2)
-            {
-                result.Me1 = MovableResultType.EnemyIsHere;
-                return result;
-            }
-            if(Me.Agent2 == Enemy.Agent1 || Me.Agent2 == Enemy.Agent2)
-            {
-                result.Me2 = MovableResultType.EnemyIsHere;
-                return result;
-            }
-
-            if (Me.Agent1 == Me.Agent2 || Me.Agent1 == oldMe.Agent2 || Me.Agent2 == oldMe.Agent1)
-            {
-                result.Me1 = MovableResultType.NotMovable;
-                result.Me2 = MovableResultType.NotMovable;
+                for (int i = 0; i < AgentsCount; ++i)
+                    result[i] = MovableResultType.NotMovable;
             }
             else
             {
-                if (EnemyField[Me.Agent1])
-                    result.Me1 = MovableResultType.EraseNeeded;
-                else
-                    result.Me1 = MovableResultType.Ok;
-
-                if (EnemyField[Me.Agent2])
-                    result.Me2 = MovableResultType.EraseNeeded;
-                else
-                    result.Me2 = MovableResultType.Ok;
+                for(int i = 0; i < AgentsCount; ++i)
+                    result[i] = EnemyField[Me[i]] ? MovableResultType.EraseNeeded : MovableResultType.Ok;
             }
             return result;
         }
-
-        
     }
 }

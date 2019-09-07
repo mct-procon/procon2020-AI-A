@@ -57,7 +57,7 @@ namespace AngryBee.AI
 			{
 				NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator);
 				if (CancellationToken.IsCancellationRequested == false)
-					SolverResult = new Decided(dp[0].Agent1Way, dp[0].Agent2Way);
+					SolverResult = new Decision(Unsafe8Array<VelocityPoint>.Create(dp[0].Agent1Way, dp[0].Agent2Way));
 				else
 					break;
 				Log("[SOLVER] deepness = {0}", deepness);
@@ -102,7 +102,7 @@ namespace AngryBee.AI
 		//ルール2では, タイル除去によっても「タイルポイント」が得られるとして計算する。
 		private void SortMoves(sbyte[,] ScoreBoard, SearchState state, Ways way, int deep)
 		{
-			var Killer = dp[deep].Score == int.MinValue ? new Player(new Point(114, 514), new Point(114, 514)) : new Player(state.Me.Agent1 + dp[deep].Agent1Way, state.Me.Agent2 + dp[deep].Agent2Way);
+			var Killer = dp[deep].Score == int.MinValue ? new Player(new Point(114, 191), new Point(114, 191)) : new Player(state.Me.Agent1 + dp[deep].Agent1Way, state.Me.Agent2 + dp[deep].Agent2Way);
 
 			for (int i = 0; i < way.Count; i++)
 			{

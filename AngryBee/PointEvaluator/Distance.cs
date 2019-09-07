@@ -8,12 +8,12 @@ namespace AngryBee.PointEvaluator
 {
     class Distance : Base
     {
-        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, int Turn, Player Me, Player Enemy)
+        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, int Turn, Unsafe8Array<Point> Me, Unsafe8Array<Point> Enemy)
         {
             ColoredBoardNormalSmaller checker = new ColoredBoardNormalSmaller(Painted.Width, Painted.Height);   //!checker == 領域
             int result = 0;
-            uint width = Painted.Width;
-            uint height = Painted.Height;
+            byte width = (byte)Painted.Width;
+            byte height = (byte)Painted.Height;
             for (uint x = 0; x < width; ++x)
                 for (uint y = 0; y < height; ++y)
                 {
@@ -73,16 +73,16 @@ namespace AngryBee.PointEvaluator
         }
 
         //囲いを見つける
-        public unsafe void BadSpaceFill(ref ColoredBoardNormalSmaller Checker, uint width, uint height)
+        public unsafe void BadSpaceFill(ref ColoredBoardNormalSmaller Checker, byte width, byte height)
         {
             unchecked
             {
-                Point* myStack = stackalloc Point[12 * 12];
+                Point* myStack = stackalloc Point[20 * 20];
 
                 Point point;
-                uint x, y, searchTo = 0, myStackSize = 0;
+                byte x, y, searchTo = 0, myStackSize = 0;
 
-                searchTo = height - 1;
+                searchTo = (byte)(height - 1);
                 for (x = 0; x < width; x++)
                 {
                     if (!Checker[x, 0])
@@ -97,7 +97,7 @@ namespace AngryBee.PointEvaluator
                     }
                 }
 
-                searchTo = width - 1;
+                searchTo = (byte)(width - 1);
                 for (y = 0; y < height; y++)
                 {
                     if (!Checker[0, y])
@@ -119,7 +119,7 @@ namespace AngryBee.PointEvaluator
                     y = point.Y;
 
                     //左方向
-                    searchTo = x - 1;
+                    searchTo = (byte)(x - 1);
                     if (searchTo < width && !Checker[searchTo, y])
                     {
                         myStack[myStackSize++] = new Point(searchTo, y);
@@ -127,7 +127,7 @@ namespace AngryBee.PointEvaluator
                     }
 
                     //下方向
-                    searchTo = y + 1;
+                    searchTo = (byte)(y + 1);
                     if (searchTo < height && !Checker[x, searchTo])
                     {
                         myStack[myStackSize++] = new Point(x, searchTo);
@@ -135,7 +135,7 @@ namespace AngryBee.PointEvaluator
                     }
 
                     //右方向
-                    searchTo = x + 1;
+                    searchTo = (byte)(x + 1);
                     if (searchTo < width && !Checker[searchTo, y])
                     {
                         myStack[myStackSize++] = new Point(searchTo, y);
@@ -143,7 +143,7 @@ namespace AngryBee.PointEvaluator
                     }
 
                     //上方向
-                    searchTo = y - 1;
+                    searchTo = (byte)(y - 1);
                     if (searchTo < height && !Checker[x, searchTo])
                     {
                         myStack[myStackSize++] = new Point(x, searchTo);

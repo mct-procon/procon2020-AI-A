@@ -11,11 +11,11 @@ namespace AngryBee.Search
     {
 		public ColoredBoardNormalSmaller MeBoard;
 		public ColoredBoardNormalSmaller EnemyBoard;
-		public Player Me;
-		public Player Enemy;
+		public Unsafe8Array<Point> Me;
+		public Unsafe8Array<Point> Enemy;
         public ObjectPool<Ways> WaysPool;
 
-		public SearchState(in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Player Me, in Player Enemy, ObjectPool<Ways> waysPool)
+		public SearchState(in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Unsafe8Array<Point> Me, in Unsafe8Array<Point> Enemy, ObjectPool<Ways> waysPool)
 		{
 			this.MeBoard = MeBoard;
 			this.EnemyBoard = EnemyBoard;
@@ -152,13 +152,13 @@ namespace AngryBee.Search
 		{
 			if (MeBoard.Height != st.MeBoard.Height) return false;
 			if (MeBoard.Width != st.MeBoard.Width) return false;
-			for (uint i = 0; i < MeBoard.Height; i++) for (uint j = 0; j < MeBoard.Width; j++) if (MeBoard[new Point(j, i)] != st.MeBoard[new Point(j, i)]) return false;
+			for (byte i = 0; i < MeBoard.Height; i++) for (byte j = 0; j < MeBoard.Width; j++) if (MeBoard[new Point(j, i)] != st.MeBoard[new Point(j, i)]) return false;
 
 			if (EnemyBoard.Height != st.EnemyBoard.Height) return false;
 			if (EnemyBoard.Width != st.EnemyBoard.Width) return false;
 			for (uint i = 0; i < EnemyBoard.Height; i++)
 				for (uint j = 0; j < EnemyBoard.Width; j++)
-					if (EnemyBoard[new Point(j, i)] != st.EnemyBoard[new Point(j, i)]) return false;
+					if (EnemyBoard[new Point((byte)j, (byte)i)] != st.EnemyBoard[new Point((byte)j, (byte)i)]) return false;
 
 			if (Me.Agent1 != st.Me.Agent1) return false;
 			if (Me.Agent2 != st.Me.Agent2) return false;

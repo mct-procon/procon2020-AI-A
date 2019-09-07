@@ -37,14 +37,13 @@ namespace AngryBee.AI
             }
             deepness = 1;
 
-            Decided BestWay = new Decided();
+            Decision BestWay = new Decision();
             while (deepness < 100)
             {
                 Max(deepness, WayEnumerator, MeBoard, EnemyBoard, Me, Enemy, int.MinValue, int.MaxValue, ScoreBoard);
                 if (!CancellationToken.IsCancellationRequested)
                 {
-                    BestWay.MeAgent1 = dp[deepness].Ag1Way;
-                    BestWay.MeAgent2 = dp[deepness].Ag2Way;
+                    BestWay.Agents = Unsafe8Array<VelocityPoint>.Create(dp[deepness].Ag1Way, dp[deepness].Ag2Way);
                     deepness++;
                 }
                 else break;
