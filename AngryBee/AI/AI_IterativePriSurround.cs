@@ -5,6 +5,10 @@ using System.Text;
 using MCTProcon30Protocol.Methods;
 using MCTProcon30Protocol;
 
+
+//TODO
+#if FALSE
+
 namespace AngryBee.AI
 {
     /// <summary>
@@ -29,7 +33,6 @@ namespace AngryBee.AI
 
         public void IterativePriSurround(sbyte[,] ScoreBoard, ColoredBoardNormalSmaller MeBoard, ColoredBoardNormalSmaller EnemyBoard, in Player Me, in Player Enemy)
         {
-            VelocityPoint[] WayEnumerator = { (1, 1), (1, -1), (-1, 1), (-1, -1), (0, 1), (-1, 0), (1, 0), (0, -1) };
 
             for (int i = 1; i < 100; ++i)
             {
@@ -40,7 +43,7 @@ namespace AngryBee.AI
             Decision BestWay = new Decision();
             while (deepness < 100)
             {
-                Max(deepness, WayEnumerator, MeBoard, EnemyBoard, Me, Enemy, int.MinValue, int.MaxValue, ScoreBoard);
+                Max(deepness, MeBoard, EnemyBoard, Me, Enemy, int.MinValue, int.MaxValue, ScoreBoard);
                 if (!CancellationToken.IsCancellationRequested)
                 {
                     BestWay.Agents = Unsafe8Array<VelocityPoint>.Create(dp[deepness].Ag1Way, dp[deepness].Ag2Way);
@@ -51,7 +54,7 @@ namespace AngryBee.AI
             SolverResult = BestWay;
         }
 
-        int Max(int deepness, in VelocityPoint[] WayEnumerator, in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Player Me, in Player Enemy, int alpha, int beta, in sbyte[,] ScoreBoard)
+        int Max(int deepness, in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Player Me, in Player Enemy, int alpha, int beta, in sbyte[,] ScoreBoard)
         {
             if (CancellationToken.IsCancellationRequested) { return 0; }
 
@@ -119,7 +122,7 @@ namespace AngryBee.AI
             return result;
         }
 
-        int Mini(int deepness, in VelocityPoint[] WayEnumerator, in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Player Me, in Player Enemy, int alpha, int beta, in sbyte[,] ScoreBoard)
+        int Mini(int deepness, in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Player Me, in Player Enemy, int alpha, int beta, in sbyte[,] ScoreBoard)
         {
             deepness--;
             if (CancellationToken.IsCancellationRequested)
@@ -207,3 +210,5 @@ namespace AngryBee.AI
         }
     }
 }
+
+#endif

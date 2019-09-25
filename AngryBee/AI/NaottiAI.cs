@@ -6,6 +6,9 @@ using MCTProcon30Protocol.Methods;
 using MCTProcon30Protocol;
 using AngryBee.Search;
 
+//TODO
+#if FALSE
+
 namespace AngryBee.AI
 {
     public class NaottiAI : MCTProcon30Protocol.AIFramework.AIBase
@@ -205,3 +208,5 @@ namespace AngryBee.AI
         }
     }
 }
+
+#endif

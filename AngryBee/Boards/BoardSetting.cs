@@ -20,6 +20,8 @@ namespace AngryBee.Boards
             this.Height = Height;
         }
 
+#if FALSE
+        [Obsolete("This is old.")]
         public static (BoardSetting setting, Player me, Player enemy) Generate(byte height = 20, byte width = 20)
         {
             if ((width & 0b1) == 1)
@@ -58,6 +60,7 @@ namespace AngryBee.Boards
                 new Player(new Point((byte)(width - agent1_x - 1), agent1_y), new Point((byte)(width - agent2_x - 1), agent2_y))
                 );
         }
+#endif
 
         //[Obsolete("It is slower.")]
         //public ColoredBoard GetNewColoredBoard()
