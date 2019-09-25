@@ -29,22 +29,22 @@ namespace AngryBee.Search
 
         public SearchState GetNextState(int AgentsCount, Unsafe8Array<Way> ways)
         {
-            for(int i = 0; i < AgentsCount; ++i)
-            {
-                var l = ways[i].Locate;
-                if (EnemyBoard[l]) // タイル除去
-                    EnemyBoard[l] = false;
-                else
-                {
-                    MeBoard[l] = true;
-                    Me[i] = l;
-                }
-            }
             var ss = new SearchState();
             ss.MeBoard = this.EnemyBoard;
             ss.EnemyBoard = this.MeBoard;
             ss.Me = this.Enemy;
             ss.Enemy = this.Me;
+            for (int i = 0; i < AgentsCount; ++i)
+            {
+                var l = ways[i].Locate;
+                if (ss.EnemyBoard[l]) // タイル除去
+                    ss.EnemyBoard[l] = false;
+                else
+                {
+                    ss.MeBoard[l] = true;
+                    ss.Me[i] = l;
+                }
+            }
             return ss;
         }
 

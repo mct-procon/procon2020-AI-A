@@ -142,7 +142,7 @@ namespace AngryBee.Search
             err:
                 if (!isHead)
                     if (!IncreaseIterator(itrs)) return false;
-                isHead = true;
+                isHead = false;
                 // Check weather each agents hits an another.
                 for (int a = 0; a < AgentsCount; ++a)
                     for (int b = a + 1; b < AgentsCount; ++b)

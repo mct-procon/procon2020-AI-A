@@ -62,6 +62,7 @@ namespace AngryBee.AI
 		//Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
 		private int NegaMax(int deepness, SearchState state, int alpha, int beta, int count, PointEvaluator.Base evaluator)
 		{
+            var sw = System.Diagnostics.Stopwatch.StartNew();
 			if (deepness == 0)
 			{
 				return evaluator.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me);
@@ -84,9 +85,10 @@ namespace AngryBee.AI
 					if (alpha >= beta) return beta; //βcut
 				}
 				state = backup;
-                if(i % 100000 == 0) 
-                    Log("WAY!{0}", i);
             }
+            sw.Stop();
+            Log("NODES : {0} nodes, elasped {1} ", i,sw.Elapsed);
+            ways.End();
             return alpha;
 		}
 

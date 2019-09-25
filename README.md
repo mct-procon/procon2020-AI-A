@@ -3,7 +3,7 @@
 
 ## Requirements & Develop Environment
 
-> OS : Windows 10 April 2018 Update  
+> OS : Windows 10 2019 Update  
 > CPU : Haswell or later Intel CPUs, Ryzen  
 > Memory : more than 2GBytes  
   
