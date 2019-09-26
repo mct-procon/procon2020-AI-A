@@ -16,19 +16,17 @@ namespace AngryBee.AI
         //PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
         PointEvaluator.Base PointEvaluator_Distance = new PointEvaluator.Distance();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
-        VelocityPoint[] WayEnumerator = { (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1) };
-        ObjectPool<Ways> WaysPool = new ObjectPool<Ways>();
 
-        private struct DP
+        private class DP
         {
-            public int Score;
-            public Unsafe8Array<VelocityPoint> AgentsWay;
+            public int Score { get; set; } = -10000;
+            public Unsafe8Array<Way> Ways { get; set; }
 
-            public void UpdateScore(int score, Unsafe8Array<VelocityPoint> a)
+            public void UpdateScore(int score, Unsafe8Array<Way> ways)
             {
                 if (Score < score)
                 {
-                    AgentsWay = a;
+                    Ways = ways;
                 }
             }
         }
@@ -62,7 +60,7 @@ namespace AngryBee.AI
             int deepness = StartDepth;
             int maxDepth = (TurnCount - CurrentTurn) * 2 + 2;
             PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Distance;
-            SearchState state = new SearchState(MyBoard, EnemyBoard, MyAgents, EnemyAgents, WaysPool);
+            SearchState state = new SearchState(MyBoard, EnemyBoard, MyAgents, EnemyAgents);
             int score = PointEvaluator_Normal.Calculate(ScoreBoard, state.MeBoard, 0, MyAgents, EnemyAgents) - PointEvaluator_Normal.Calculate(ScoreBoard, state.EnemyBoard, 0, EnemyAgents, MyAgents);
 
             Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
@@ -93,7 +91,7 @@ namespace AngryBee.AI
 
                 //普通にNegaMaxをして、最善手を探す
                 NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, null, greedyDepth);
-                Decision best1 = new Decision(dp1[0].AgentsWay);
+                Decision best1 = new Decision(Unsafe8Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
                 resultList.Add(best1);
 
                 //競合手.Agent == 最善手.Agent の数が半数以上になった場合、競合手をngMoveとして探索をおこない、最善手を探す
@@ -106,7 +104,7 @@ namespace AngryBee.AI
                 if (UnMoveAgentNum > AgentsCount/2)
                 {
                     NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, best1, greedyDepth);
-                    Decision best2 = new Decision(dp2[0].AgentsWay);
+                    Decision best2 = new Decision(Unsafe8Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
                     resultList.Add(best2);
                 }
 
@@ -224,5 +222,4 @@ namespace AngryBee.AI
         }
     }
 }
-
 #endif
