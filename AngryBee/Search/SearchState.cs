@@ -37,12 +37,12 @@ namespace AngryBee.Search
             for (int i = 0; i < AgentsCount; ++i)
             {
                 var l = ways[i].Locate;
-                if (ss.EnemyBoard[l]) // タイル除去
-                    ss.EnemyBoard[l] = false;
+                if (ss.MeBoard[l]) // タイル除去
+                    ss.MeBoard[l] = false;
                 else
                 {
-                    ss.MeBoard[l] = true;
-                    ss.Me[i] = l;
+                    ss.EnemyBoard[l] = true;
+                    ss.Enemy[i] = l;
                 }
             }
             return ss;
