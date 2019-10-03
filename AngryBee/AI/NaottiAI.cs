@@ -73,24 +73,24 @@ namespace AngryBee.AI
                 {
                     if (IsAgentsMoved[i]) break;
                 }
-                if(i == AgentsCount) SolverResultList.Add(lastTurnDecided);
-                return;
+                if (i == AgentsCount)
+                {
+                    SolverResultList.Add(lastTurnDecided);
+                    return;
+                }
             }
-
             for (; deepness <= maxDepth; deepness++)
             {
 				Decided resultList = new Decided();
 
                 int greedyDepth = Math.Min(greedyMaxDepth, maxDepth - deepness);
                 if ((deepness + greedyDepth) % 2 == 1 && greedyDepth > 0) greedyDepth--;
-
-				//普通にNegaMaxをして、最善手を探す
+                //普通にNegaMaxをして、最善手を探す
                 NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, null, greedyDepth);
 				Decision best1 = new Decision(Unsafe8Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
 				resultList.Add(best1);
-
                 //競合手.Agent1 == 最善手.Agent1 && 競合手.Agent2 == 最善手.Agent2になった場合、競合手をngMoveとして探索をおこない、最善手を探す
-                for(int i = 0; i < AgentsCount; ++i)
+                for (int i = 0; i < AgentsCount; ++i)
                 {
                     if(IsAgentsMoved[i] || !lastTurnDecided.Agents[i].Equals(best1.Agents[i]))
                     {
@@ -118,12 +118,12 @@ namespace AngryBee.AI
 					return;
                 Log("[SOLVER] deepness = {0}", deepness);
             }
-		}
+        }
 
         protected override void EndSolve(object sender, EventArgs e)
         {
             base.EndSolve(sender, e);
-            lastTurnDecided = new Decision();  //0番目の手を指したとする。（次善手を人間が選んで競合した～ということがなければOK）
+            lastTurnDecided = SolverResultList[0];  //0番目の手を指したとする。（次善手を人間が選んで競合した～ということがなければOK）
         }
 
         //Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
