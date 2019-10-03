@@ -43,6 +43,7 @@ namespace AngryBee.AI
 		{
 			for (int i = 0; i < 50; ++i)
 				dp[i].Score = int.MinValue;
+
 			int deepness = StartDepth;
 			int maxDepth = (TurnCount - CurrentTurn) * 2;
 			PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;

@@ -94,11 +94,12 @@ namespace AngryBee.AI
                 {
                     if(IsAgentsMoved[i] || !lastTurnDecided.Agents[i].Equals(best1.Agents[i]))
                     {
-                        NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, best1, greedyDepth);
-                        Decision best2 = new Decision(Unsafe8Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
-                        resultList.Add(best2);
                         break;
                     }
+                    if (i < AgentsCount - 1) continue;
+                    NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, best1, greedyDepth);
+                    Decision best2 = new Decision(Unsafe8Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                    resultList.Add(best2);
                 }
                 
                 if (CancellationToken.IsCancellationRequested == false)
@@ -122,7 +123,7 @@ namespace AngryBee.AI
         protected override void EndSolve(object sender, EventArgs e)
         {
             base.EndSolve(sender, e);
-            lastTurnDecided = SolverResultList[0];  //0番目の手を指したとする。（次善手を人間が選んで競合した～ということがなければOK）
+            lastTurnDecided = new Decision();  //0番目の手を指したとする。（次善手を人間が選んで競合した～ということがなければOK）
         }
 
         //Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
