@@ -51,6 +51,8 @@ namespace AngryBee.AI
             {
                 dp1[i].Score = int.MinValue;
                 dp2[i].Score = int.MinValue;
+                dp1[i].Ways = new Unsafe8Array<Way>();
+                dp2[i].Ways = new Unsafe8Array<Way>();
             }
 
             int deepness = StartDepth;
@@ -149,6 +151,17 @@ namespace AngryBee.AI
                 if (count < AgentsCount && !(ngMove is null))    //競合手とは違う手を指す
                 {
                     if (!way.Equals(ngMove.Agents[nowAgent])) continue;
+                }
+                if (count == 0) {
+                    int j = 0;
+                    for (j = 0; j < nowAgent; ++j)
+                    {
+                        if(dp1[0].Ways[j].Locate == way.Locate)
+                        {
+                            break;
+                        }
+                    }
+                    if (j != nowAgent) continue;
                 }
 
                 Unsafe8Array<Way> newways = new Unsafe8Array<Way>();
