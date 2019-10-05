@@ -27,42 +27,111 @@ namespace AngryBee.AI
                     Ways = ways;
                 }
             }
-        }
-        private DP[] dp = new DP[50];
 
+        }
+        private DP[] dp1 = new DP[50];  //dp1[i] = 深さi時点での最善手
+        private DP[] dp2 = new DP[50];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
+        private Decision lastTurnDecided = null;		//1ターン前に「実際に」打った手（競合していた場合, 競合手==lastTurnDecidedとなる。競合していない場合は, この変数は探索に使用されない）
         public int StartDepth { get; set; } = 1;
 
-        public AokiAI_8(int startDepth = 1)
+        public AokiAI_8(int startDepth = 0, int greedyMaxDepth = 0)
         {
             for (int i = 0; i < 50; ++i)
-                dp[i] = new DP();
+            {
+                dp1[i] = new DP();
+                dp2[i] = new DP();
+            }
             StartDepth = startDepth;
         }
 
-        //1ターン = 深さ2
+
         protected override void Solve()
         {
             for (int i = 0; i < 50; ++i)
-                dp[i].Score = int.MinValue;
-            int deepness = StartDepth;
-            int maxDepth = (TurnCount - CurrentTurn) * 2;
-            PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
-            //PointEvaluator.Base evaluator = PointEvaluator_Normal;
-            SearchState state = new SearchState(MyBoard, EnemyBoard, MyAgents, EnemyAgents);
-
-            for (; deepness <= 1; deepness++)
             {
-                NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator);
+                dp1[i].Score = int.MinValue;
+                dp2[i].Score = int.MinValue;
+            }
+
+            int deepness = StartDepth;
+            int maxDepth = (TurnCount - CurrentTurn) + 1;
+            PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
+            SearchState state = new SearchState(MyBoard, EnemyBoard, MyAgents, EnemyAgents);
+            int score = PointEvaluator_Normal.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - PointEvaluator_Normal.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me);
+
+            Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
+            //if (!(lastTurnDecided is null)) Log("IsAgent1Moved = {0}, IsAgent2Moved = {1}, lastTurnDecided = {2}", IsAgent1Moved, IsAgent2Moved, lastTurnDecided);
+
+            if (!(lastTurnDecided is null) && score > 0)    //勝っている状態で競合していたら
+            {
+                int i;
+                for (i = 0; i < AgentsCount; ++i)
+                {
+                    if (IsAgentsMoved[i]) break;
+                }
+                if (i == AgentsCount)
+                {
+                    SolverResultList.Add(lastTurnDecided);
+                    return;
+                }
+            }
+            for (; deepness <= maxDepth; deepness++)
+            {
+                Decided resultList = new Decided();
+
+                //普通にNegaMaxをして、最善手を探す
+                for (int agent = 0; agent < AgentsCount; ++agent)
+                {
+                    Unsafe8Array<Way> nextways = dp1[0].Ways;
+                    NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent);
+                }
+                Decision best1 = new Decision(Unsafe8Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                resultList.Add(best1);
+                //競合手.Agent1 == 最善手.Agent1 && 競合手.Agent2 == 最善手.Agent2になった場合、競合手をngMoveとして探索をおこない、最善手を探す
+                for (int i = 0; i < AgentsCount; ++i)
+                {
+                    if (IsAgentsMoved[i] || !lastTurnDecided.Agents[i].Equals(best1.Agents[i]))
+                    {
+                        break;
+                    }
+                    if (i < AgentsCount - 1) continue;
+
+                    for (int agent = 0; agent < AgentsCount; ++agent)
+                    {
+                        Unsafe8Array<Way> nextways = dp2[0].Ways;
+                        NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, best1, nextways, agent);
+                    }
+                    Decision best2 = new Decision(Unsafe8Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                    resultList.Add(best2);
+                }
+
                 if (CancellationToken.IsCancellationRequested == false)
-                    SolverResult = new Decision(Unsafe8Array<VelocityPoint>.Create(dp[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                {
+                    SolverResultList = resultList;
+                    if (SolverResultList.Count == 2 && score <= 0)  //現時点で引き分けか負けていたら競合を避けるのを優先してみる（デバッグ用）
+                    {
+                        var tmp = SolverResultList[0];
+                        SolverResultList[0] = SolverResultList[1];
+                        SolverResultList[1] = tmp;
+                        Log("[SOLVER] Swaped! {0} {1}", SolverResult.Agents[0], SolverResult.Agents[1]);
+                    }
+                    Log("[SOLVER] SolverResultList.Count = {0}, score = {1}", SolverResultList.Count, score);
+                }
                 else
-                    break;
+                    return;
                 Log("[SOLVER] deepness = {0}", deepness);
             }
         }
 
+        protected override void EndSolve(object sender, EventArgs e)
+        {
+            base.EndSolve(sender, e);
+            lastTurnDecided = SolverResultList[0];  //0番目の手を指したとする。（次善手を人間が選んで競合した～ということがなければOK）
+        }
+
         //Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
-        private int NegaMax(int deepness, SearchState state, int alpha, int beta, int count, PointEvaluator.Base evaluator)
+        //NegaMaxではない
+        private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe8Array<Way> nextways, int nowAgent)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             if (deepness == 0)
@@ -73,38 +142,41 @@ namespace AngryBee.AI
             Ways ways = state.MakeMoves(AgentsCount, ScoreBoard);
 
             int i = 0;
-            for (int agent = 0; agent < AgentsCount; ++agent)
+            foreach (var way in ways.Data[nowAgent])
             {
-                foreach(var way in ways.Data[agent])
+                if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
+                i++;
+                if (count < AgentsCount && !(ngMove is null))    //競合手とは違う手を指す
                 {
-                    i++;
-                    if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
-
-                    Unsafe8Array<Way> newways = new Unsafe8Array<Way>();
-                    newways[agent] = way;
-                    SearchState backup = state;
-                    state = state.GetNextState(AgentsCount, newways);
-                    int res = -NegaMax(deepness - 1, state, -beta, -alpha, count + 1, evaluator);
-                    if (alpha < res)
-                    {
-                        alpha = res;
-                        dp[count].UpdateScore(alpha, newways);
-                        if (alpha >= beta) return beta; //βcut
-                    }
-                    state = backup;
+                    if (!way.Equals(ngMove.Agents[nowAgent])) continue;
                 }
+
+                Unsafe8Array<Way> newways = new Unsafe8Array<Way>();
+                newways[nowAgent] = way;
+                nextways[nowAgent] = way;
+                SearchState backup = state;
+                state = state.GetNextState(AgentsCount, newways);
+
+                int res = NegaMax(deepness - 1, state, alpha, count + 1, evaluator, ngMove, nextways, nowAgent);
+                if (alpha < res)
+                {
+                    alpha = res;
+                    if (ngMove is null) { dp1[count].UpdateScore(alpha, nextways); }
+                    else { dp2[count].UpdateScore(alpha, nextways); }
+                }
+
+                state = backup;
             }
 
-            
             sw.Stop();
-            Log("NODES : {0} nodes, elasped {1} ", i, sw.Elapsed);
+            //Log("NODES : {0} nodes, elasped {1} ", i, sw.Elapsed);
             ways.End();
             return alpha;
         }
 
         protected override int CalculateTimerMiliSconds(int miliseconds)
         {
-            return int.MaxValue;
+            return miliseconds - 1000;
         }
 
         protected override void EndGame(GameEnd end)

@@ -30,26 +30,36 @@ namespace AngryBee.Search
         public SearchState GetNextState(int AgentsCount, Unsafe8Array<Way> ways)
         {
             var ss = new SearchState();
-            ss.MeBoard = this.EnemyBoard;
-            ss.EnemyBoard = this.MeBoard;
-            ss.Me = this.Enemy;
-            ss.Enemy = this.Me;
+            ss.MeBoard = this.MeBoard;
+            ss.EnemyBoard = this.EnemyBoard;
+            ss.Me = this.Me;
+            ss.Enemy = this.Enemy;
             for (int i = 0; i < AgentsCount; ++i)
             {
                 var l = ways[i].Locate;
-                if (ss.MeBoard[l]) // タイル除去
-                    ss.MeBoard[l] = false;
+                if (ss.EnemyBoard[l]) // タイル除去
+                    ss.EnemyBoard[l] = false;
                 else
                 {
-                    ss.EnemyBoard[l] = true;
-                    ss.Enemy[i] = l;
+                    ss.MeBoard[l] = true;
+                    ss.Me[i] = l;
                 }
             }
             return ss;
         }
+        public SearchState ChangeTurn(int AgentsCount, Unsafe8Array<Way> ways)
+        {
+            var ss = new SearchState();
+            ss.MeBoard = this.EnemyBoard;
+            ss.EnemyBoard = this.MeBoard;
+            ss.Me = this.Enemy;
+            ss.Enemy = this.Me;
 
-		//内容が等しいか？
-		public bool Equals(SearchState st, int agentCount)
+            return ss;
+        }
+
+        //内容が等しいか？
+        public bool Equals(SearchState st, int agentCount)
 		{
 #if DEBUG
             if (MeBoard.Height != st.MeBoard.Height) return false;

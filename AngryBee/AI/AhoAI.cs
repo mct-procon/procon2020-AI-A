@@ -78,7 +78,8 @@ namespace AngryBee.AI
 				if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
 				SearchState backup = state;
 				state = state.GetNextState(AgentsCount, way);
-				int res = -NegaMax(deepness - 1, state, -beta, -alpha, count + 1, evaluator);
+                state = state.ChangeTurn(AgentsCount, way);
+                int res = -NegaMax(deepness - 1, state, -beta, -alpha, count + 1, evaluator);
 				if (alpha < res)
 				{
 					alpha = res;

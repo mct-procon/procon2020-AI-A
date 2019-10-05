@@ -9,7 +9,7 @@ namespace AngryBee
         public static void Main(string[] args)
 		{
 			int aiType = 0;
-			Console.WriteLine("AIの種類を入力(0:Aho, 1:Naotti, 2:AokiAI)");
+			Console.WriteLine("AIの種類を入力(0:Aho, 1:Naotti, 2:AokiAI_8)");
 			aiType = int.Parse(Console.ReadLine());
 
 			MCTProcon30Protocol.AIFramework.AIBase AI = null;
@@ -21,13 +21,13 @@ namespace AngryBee
    //             greedyMaxDepth = int.Parse(Console.ReadLine());
                 AI = new AI.NaottiAI(1, greedyMaxDepth);
             }
-   //         if (aiType == 2)
-   //         {
-   //             int greedyMaxDepth = 4;
+            if (aiType == 2)
+            {
+                int greedyMaxDepth = 4;
    //             Console.WriteLine("探索延長の最大手数(推奨値 = 4)");
    //             greedyMaxDepth = int.Parse(Console.ReadLine());
-   //             AI = new AI.AokiAI(1, greedyMaxDepth);
-   //         }
+                AI = new AI.AokiAI_8(1, greedyMaxDepth);
+            }
 
             int portId;
 
