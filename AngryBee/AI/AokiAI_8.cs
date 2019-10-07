@@ -147,6 +147,7 @@ namespace AngryBee.AI
             foreach (var way in ways.Data[nowAgent])
             {
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
+                if (way.Direction == new VelocityPoint()) continue;
                 i++;
                 if (count < AgentsCount && !(ngMove is null))    //競合手とは違う手を指す
                 {
@@ -156,9 +157,19 @@ namespace AngryBee.AI
                     int j = 0;
                     for (j = 0; j < nowAgent; ++j)
                     {
-                        if(dp1[0].Ways[j].Locate == way.Locate)
+                        if (ngMove is null)
                         {
-                            break;
+                            if (dp1[0].Ways[j].Locate == way.Locate)
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            if(dp2[0].Ways[j].Locate == way.Locate)
+                            {
+                                break;
+                            }
                         }
                     }
                     if (j != nowAgent) continue;

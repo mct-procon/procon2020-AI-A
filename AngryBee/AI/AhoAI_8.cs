@@ -52,7 +52,8 @@ namespace AngryBee.AI
 
             int deepness = StartDepth;
             int maxDepth = (TurnCount - CurrentTurn) + 1;
-            PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
+            //PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
+            PointEvaluator.Base evaluator = PointEvaluator_Normal;
             SearchState state = new SearchState(MyBoard, EnemyBoard, MyAgents, EnemyAgents);
 
             Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
@@ -85,6 +86,7 @@ namespace AngryBee.AI
             foreach (var way in ways.Data[nowAgent])
             {
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
+                if (way.Direction == new VelocityPoint()) continue;
                 i++;
                 if (count < AgentsCount && !(ngMove is null))    //競合手とは違う手を指す
                 {
@@ -120,7 +122,7 @@ namespace AngryBee.AI
             }
 
             sw.Stop();
-            //Log("NODES : {0} nodes, elasped {1} ", i, sw.Elapsed);
+            Log("NODES : {0} nodes, elasped {1} ", i, sw.Elapsed);
             ways.End();
             return alpha;
         }

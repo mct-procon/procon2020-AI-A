@@ -36,6 +36,7 @@ namespace AngryBee.Search
             ss.Enemy = this.Enemy;
             for (int i = 0; i < AgentsCount; ++i)
             {
+                if (ways[i].Direction == new VelocityPoint()) continue;
                 var l = ways[i].Locate;
                 if (ss.EnemyBoard[l]) // タイル除去
                     ss.EnemyBoard[l] = false;
