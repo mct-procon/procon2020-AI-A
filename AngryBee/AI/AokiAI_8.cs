@@ -153,6 +153,7 @@ namespace AngryBee.AI
                 {
                     if (!way.Equals(ngMove.Agents[nowAgent])) continue;
                 }
+                //自エージェントとの衝突を防ぐ（後を行くのも防ぐ）
                 if (count == 0) {
                     int j = 0;
                     for (j = 0; j < nowAgent; ++j)
@@ -160,19 +161,22 @@ namespace AngryBee.AI
                         if (ngMove is null)
                         {
                             if (dp1[0].Ways[j].Locate == way.Locate)
-                            {
                                 break;
-                            }
                         }
                         else
                         {
                             if(dp2[0].Ways[j].Locate == way.Locate)
-                            {
                                 break;
-                            }
                         }
                     }
                     if (j != nowAgent) continue;
+
+                    for(j = 0; j < AgentsCount; ++j)
+                    {
+                        if (j == nowAgent) continue;
+                        if (way.Locate == state.Me[j]) break;
+                    }
+                    if (j != AgentsCount) continue;
                 }
 
                 Unsafe8Array<Way> newways = new Unsafe8Array<Way>();
