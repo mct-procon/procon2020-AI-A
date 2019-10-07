@@ -88,10 +88,6 @@ namespace AngryBee.AI
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
                 if (way.Direction == new VelocityPoint()) continue;
                 i++;
-                if (count < AgentsCount && !(ngMove is null))    //競合手とは違う手を指す
-                {
-                    if (!way.Equals(ngMove.Agents[nowAgent])) continue;
-                }
                 if (count == 0)
                 {
                     int j = 0;
@@ -122,7 +118,7 @@ namespace AngryBee.AI
             }
 
             sw.Stop();
-            Log("NODES : {0} nodes, elasped {1} ", i, sw.Elapsed);
+            //Log("NODES : {0} nodes, elasped {1} ", i, sw.Elapsed);
             ways.End();
             return alpha;
         }

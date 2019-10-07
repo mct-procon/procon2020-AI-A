@@ -166,7 +166,7 @@ namespace AngryBee.AI
                 
                 SearchState nextState = state;
                 nextState = nextState.GetNextState(AgentsCount, way);
-                nextState = nextState.ChangeTurn(AgentsCount, way);
+                nextState = nextState.ChangeTurn();
                 int res = -NegaMax(deepness - 1, nextState, -beta, -alpha, count + 1, evaluator, ngMove, greedyDepth);
                 if (alpha < res)
                 {

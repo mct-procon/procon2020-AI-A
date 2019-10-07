@@ -48,7 +48,7 @@ namespace AngryBee.Search
             }
             return ss;
         }
-        public SearchState ChangeTurn(int AgentsCount, Unsafe8Array<Way> ways)
+        public SearchState ChangeTurn()
         {
             var ss = new SearchState();
             ss.MeBoard = this.EnemyBoard;

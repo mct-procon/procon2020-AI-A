@@ -149,7 +149,7 @@ namespace AngryBee.AI
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
                 if (way.Direction == new VelocityPoint()) continue;
                 i++;
-                if (count < AgentsCount && !(ngMove is null))    //競合手とは違う手を指す
+                if (count == 0 && !(ngMove is null))    //競合手とは違う手を指す
                 {
                     if (!way.Equals(ngMove.Agents[nowAgent])) continue;
                 }
@@ -180,7 +180,7 @@ namespace AngryBee.AI
                 nextways[nowAgent] = way;
                 SearchState backup = state;
                 state = state.GetNextState(AgentsCount, newways);
-
+                
                 int res = NegaMax(deepness - 1, state, alpha, count + 1, evaluator, ngMove, nextways, nowAgent);
                 if (alpha < res)
                 {
