@@ -88,18 +88,16 @@ namespace AngryBee.AI
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
                 if (way.Direction == new VelocityPoint()) continue;
                 i++;
-                if (count == 0)
+
+                int j = 0;
+                for (j = 0; j < nowAgent; ++j)
                 {
-                    int j = 0;
-                    for (j = 0; j < nowAgent; ++j)
+                    if (dp[0].Ways[j].Locate == way.Locate)
                     {
-                        if (dp[0].Ways[j].Locate == way.Locate)
-                        {
-                            break;
-                        }
+                        break;
                     }
-                    if (j != nowAgent) continue;
                 }
+                if (j != nowAgent) continue;
 
                 Unsafe8Array<Way> newways = new Unsafe8Array<Way>();
                 newways[nowAgent] = way;
