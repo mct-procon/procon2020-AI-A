@@ -145,80 +145,120 @@ namespace AngryBee.AI
             }
 
             Ways ways = state.MakeMoves(AgentsCount, ScoreBoard);
-            //SortMoves(ScoreBoard, state, ways, count, ngMove);
-
+            SmallWays sways = new SmallWays(AgentsCount);
+            //ways => sways
             foreach (var way in ways.GetEnumerator(AgentsCount))
+            {
+                sways.Add(new SmallWay(way));
+            }
+            SortMoves(ScoreBoard, state, sways, count, ngMove);
+            
+            for(int i = 0; i < sways.Count; ++i)
             {
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
                 //if (count == 0 && !(ngMove is null) && new Decided(ways[i].Agent1Way, ways[i].Agent2Way).Equals(ngMove)) { continue; }	//競合手を避ける場合
                 if (count == 0 && !(ngMove is null))    //2人とも競合手とは違う手を指す
                 {
-                    int i;
                     for(i = 0; i < AgentsCount; ++i)
                     {
-                        if (way[i].Equals(ngMove.Agents[i]))
+                        if (sways[i].Equals(ngMove.Agents[i]))
                         {
                             break;
                         }
                     }
                     if (i != AgentsCount) continue;
                 }
-                
+
                 SearchState nextState = state;
-                nextState = nextState.GetNextState(AgentsCount, way);
+                nextState = nextState.GetNextState(AgentsCount, sways[i].AgentsWay);
                 nextState = nextState.ChangeTurn();
                 int res = -NegaMax(deepness - 1, nextState, -beta, -alpha, count + 1, evaluator, ngMove, greedyDepth);
                 if (alpha < res)
                 {
                     alpha = res;
-					if (ngMove is null) { dp1[count].UpdateScore(alpha, way); }
-					else { dp2[count].UpdateScore(alpha, way); }
+					if (ngMove is null) { dp1[count].UpdateScore(alpha, sways[i].AgentsWay); }
+					else { dp2[count].UpdateScore(alpha, sways[i].AgentsWay); }
                     if (alpha >= beta) return beta; //βcut
                 }
             }
-            //ways.Erase();
+            sways.Erase();
             //WaysPool.Return(ways);
             return alpha;
         }
 
-        //TODO
-
-        /*
+        
         //遷移順を決める.  「この関数においては」MeBoard…手番プレイヤのボード, Me…手番プレイヤ、とします。
         //引数: stateは手番プレイヤが手を打つ前の探索状態、(way1[i], way2[i])はi番目の合法手（移動量）です。
         //以下のルールで優先順を決めます.
         //ルール1. Killer手（優先したい手）があれば、それを優先する
         //ルール2. 次のmoveで得られる「タイルポイント」の合計値が大きい移動（の組み合わせ）を優先する。
         //ルール2では, タイル除去によっても「タイルポイント」が得られるとして計算する。
-        private void SortMoves(sbyte[,] ScoreBoard, SearchState state, Ways way, int deep, Decision ngMove)
+        private void SortMoves(sbyte[,] ScoreBoard, SearchState state, SmallWays ways, int deep, Decision ngMove)
         {
-			Player Killer;
+
+		    Unsafe8Array<Point> Killer = new Unsafe8Array<Point>();
 			if (ngMove is null)
 			{
-				Killer = dp1[deep].Score == int.MinValue ? new Player(new Point(114, 191), new Point(114, 191)) : new Player(state.Me.Agent1 + dp1[deep].Agent1Way, state.Me.Agent2 + dp1[deep].Agent2Way);
+                if(dp1[deep].Score == int.MinValue)
+                {
+                    for(int i = 0; i < AgentsCount; ++i)
+                    {
+                        Killer[i] = new Point(114, 191);
+                    }
+                }
+                else
+                {
+                    for(int i = 0; i < AgentsCount; ++i)
+                    {
+                        Killer[i] = state.Me[i] + dp1[deep].Ways[i].Direction;
+                    }
+                }
 			}
 			else
 			{
-				Killer = dp2[deep].Score == int.MinValue ? new Player(new Point(114, 191), new Point(114, 191)) : new Player(state.Me.Agent1 + dp2[deep].Agent1Way, state.Me.Agent2 + dp2[deep].Agent2Way);
-			}
-
-            for (int i = 0; i < way.Count; i++)
-            {
-                int score = 0;
-                Point next1 = state.Me.Agent1 + way[i].Agent1Way;
-                Point next2 = state.Me.Agent2 + way[i].Agent2Way;
-
-                if (Killer.Agent1 == next1 && Killer.Agent2 == next2) { score = 100; }
-
-                if (state.EnemyBoard[next1]) { score += ScoreBoard[next1.X, next1.Y]; }     //タイル除去によって有利になる
-                else if (!state.MeBoard[next1]) { score += ScoreBoard[next1.X, next1.Y]; }  //移動でMeの陣地が増えて有利になる
-                if (state.EnemyBoard[next2]) { score += ScoreBoard[next2.X, next2.Y]; }
-                else if (!state.MeBoard[next2]) { score += ScoreBoard[next2.X, next2.Y]; }
-                way[i].Point = score;
+                if (dp2[deep].Score == int.MinValue)
+                {
+                    for (int i = 0; i < AgentsCount; ++i)
+                    {
+                        Killer[i] = new Point(114, 191);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < AgentsCount; ++i)
+                    {
+                        Killer[i] = state.Me[i] + dp2[deep].Ways[i].Direction;
+                    }
+                }
             }
-            way.Sort();
+            
+            for (int i = 0; i < ways.Count; ++i)
+            {
+                sbyte score = 0;
+                Unsafe8Array<Point> next = new Unsafe8Array<Point>();
+                for(int j = 0; j < AgentsCount; ++j)
+                {
+                    next[j] = state.Me[j] + ways[i].AgentsWay[j].Direction;
+                }
+
+                for(int j = 0; j < AgentsCount; ++j)
+                {
+                    if(Killer[j] != next[j])
+                        break;
+                    if (j == AgentsCount - 1)
+                        score = 100;
+                }
+
+                for(int j = 0; j < AgentsCount; ++j)
+                {
+                    if (state.EnemyBoard[next[j]]) score += ScoreBoard[next[j].X, next[j].Y];    //タイル除去によって有利になる
+                    else if (!state.MeBoard[next[j]]) score += ScoreBoard[next[j].X, next[j].Y]; //移動でMeの陣地が増えて有利になる
+                }
+
+            }
+            ways.Sort();
         }
-        */
+
         protected override int CalculateTimerMiliSconds(int miliseconds)
         {
             return miliseconds - 1000;
