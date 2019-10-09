@@ -48,6 +48,7 @@ namespace AngryBee.AI
             this.greedyMaxDepth = greedyMaxDepth;
         }
 
+
         //1ターン = 深さ2
         protected override void Solve()
         {
@@ -131,14 +132,14 @@ namespace AngryBee.AI
         {
             if (deepness == 0)
             {
-                for (int j = 0; j < greedyDepth; j++)
-                {
-                    Unsafe8Array<VelocityPoint> move = state.MakeGreedyMove(ScoreBoard, WayEnumerator, AgentsCount);
-                    state.Move(move, AgentsCount);
+                //for (int j = 0; j < greedyDepth; j++)
+                //{
+                    //Unsafe8Array<VelocityPoint> move = state.MakeGreedyMove(ScoreBoard, WayEnumerator, AgentsCount);
+                    //state.Move(move, AgentsCount);
                     //Ways moves = state.MakeMoves(AgentsCount, ScoreBoard);
                     //SortMoves(ScoreBoard, state, moves, 49, null);
                     //state.Move(moves[0].Agent1Way, moves[1].Agent2Way);
-                }
+                //}
                 int score = evaluator.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me);
                 if (greedyDepth % 2 == 1) return -score;
                 return score;
@@ -261,7 +262,7 @@ namespace AngryBee.AI
 
         protected override int CalculateTimerMiliSconds(int miliseconds)
         {
-            return miliseconds - 1000;
+            return miliseconds - 500;
         }
 
         protected override void EndGame(GameEnd end)

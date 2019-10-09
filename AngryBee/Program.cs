@@ -23,10 +23,7 @@ namespace AngryBee
             }
             if (aiType == 2)
             {
-                int greedyMaxDepth = 4;
-   //             Console.WriteLine("探索延長の最大手数(推奨値 = 4)");
-   //             greedyMaxDepth = int.Parse(Console.ReadLine());
-                AI = new AI.AokiAI_8(1, greedyMaxDepth);
+                AI = new AI.SingleAgentAI(1);
             }
             if(aiType == 3)
             {

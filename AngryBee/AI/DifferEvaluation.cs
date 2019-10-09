@@ -8,9 +8,11 @@ using AngryBee.Search;
 using System.Linq;
 
 
+//TODO
+#if false
 namespace AngryBee.AI
 {
-    public class AokiAI_8 : MCTProcon30Protocol.AIFramework.AIBase
+    public class DifferEvaluation : MCTProcon30Protocol.AIFramework.AIBase
     {
         PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
@@ -34,7 +36,7 @@ namespace AngryBee.AI
         private Decision lastTurnDecided = null;		//1ターン前に「実際に」打った手（競合していた場合, 競合手==lastTurnDecidedとなる。競合していない場合は, この変数は探索に使用されない）
         public int StartDepth { get; set; } = 1;
 
-        public AokiAI_8(int startDepth = 0)
+        public DifferEvaluation(int startDepth = 0, int greedyMaxDepth = 0)
         {
             for (int i = 0; i < 50; ++i)
             {
@@ -154,7 +156,8 @@ namespace AngryBee.AI
                     if (!way.Equals(ngMove.Agents[nowAgent])) continue;
                 }
                 //自エージェントとの衝突を防ぐ（後を行くのも防ぐ）
-                if (count == 0) {
+                if (count == 0)
+                {
                     int j = 0;
                     for (j = 0; j < nowAgent; ++j)
                     {
@@ -165,13 +168,13 @@ namespace AngryBee.AI
                         }
                         else
                         {
-                            if(dp2[0].Ways[j].Locate == way.Locate)
+                            if (dp2[0].Ways[j].Locate == way.Locate)
                                 break;
                         }
                     }
                     if (j != nowAgent) continue;
 
-                    for(j = 0; j < AgentsCount; ++j)
+                    for (j = 0; j < AgentsCount; ++j)
                     {
                         if (j == nowAgent) continue;
                         if (way.Locate == state.Me[j]) break;
@@ -184,7 +187,7 @@ namespace AngryBee.AI
                 nextways[nowAgent] = way;
                 SearchState backup = state;
                 state = state.GetNextState(AgentsCount, newways);
-                
+
                 int res = NegaMax(deepness - 1, state, alpha, count + 1, evaluator, ngMove, nextways, nowAgent);
                 if (alpha < res)
                 {
@@ -212,3 +215,4 @@ namespace AngryBee.AI
         }
     }
 }
+#endif
