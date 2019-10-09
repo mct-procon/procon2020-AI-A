@@ -37,7 +37,7 @@ namespace AngryBee.AI
         private int greedyMaxDepth = 0;         //探索延長の最大手数
         public int StartDepth { get; set; } = 1;
 
-        public NaottiAI(int startDepth = 1, int greedyMaxDepth = 0)
+        public NaottiAI(int startDepth = 1, int greedyMaxDepth = 4)
         {
 			for (int i = 0; i < 50; ++i)
 			{
@@ -131,14 +131,14 @@ namespace AngryBee.AI
         {
             if (deepness == 0)
             {
-                //for (int j = 0; j < greedyDepth; j++)
-                //{
-                    //Way move = state.MakeGreedyMove(ScoreBoard, WayEnumerator);
-                    //state.Move(move.Agent1Way, move.Agent2Way);
-                    //Ways moves = state.MakeMoves(WayEnumerator);
+                for (int j = 0; j < greedyDepth; j++)
+                {
+                    Unsafe8Array<VelocityPoint> move = state.MakeGreedyMove(ScoreBoard, WayEnumerator, AgentsCount);
+                    state.Move(move, AgentsCount);
+                    //Ways moves = state.MakeMoves(AgentsCount, ScoreBoard);
                     //SortMoves(ScoreBoard, state, moves, 49, null);
                     //state.Move(moves[0].Agent1Way, moves[1].Agent2Way);
-                //}
+                }
                 int score = evaluator.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me);
                 if (greedyDepth % 2 == 1) return -score;
                 return score;

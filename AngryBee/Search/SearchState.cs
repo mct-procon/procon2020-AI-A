@@ -59,6 +59,111 @@ namespace AngryBee.Search
             return ss;
         }
 
+        //タイルスコア最大の手を返す（MakeMoves -> SortMovesで0番目に来る手を返す）探索延長を高速化するために使用。
+        public Unsafe8Array<VelocityPoint> MakeGreedyMove(sbyte[,] ScoreBoard, VelocityPoint[] WayEnumrator, int AgentsCount)
+        {
+            int i, j;
+            int[] Score = { -100, -100, -100, -100, -100, -100, -100, -100 };
+            Unsafe8Array<VelocityPoint> ways = new Unsafe8Array<VelocityPoint>();
+
+            //自分2人が被るかのチェックをしないで、最大の組み合わせを探す
+            for (i = 0; i < AgentsCount; ++i)
+            {
+                for (j = 0; j < WayEnumrator.Length; j++)
+                {
+                    Point next = Me[i] + WayEnumrator[j];
+                    if (next.X >= MeBoard.Width || next.Y >= MeBoard.Height) continue;
+                    bool b = false;
+                    for(int k = 0; k < AgentsCount; ++k)
+                    {
+                        if (next == Enemy[k])
+                        {
+                            b = true;
+                            break;
+                        }
+                    }
+                    if (b) continue;
+                    int score = (MeBoard[next] == true) ? 0 : ScoreBoard[next.X, next.Y];
+                    if (Score[i] < score) { Score[i] = score; ways[i] = WayEnumrator[j]; }
+                }
+            }
+
+
+            for(i = 0; i < AgentsCount; ++i)
+            {
+                if (Score[i] <= -100) break;
+                for(j = i+1; j < AgentsCount; ++j)
+                {
+                    if (Me[i] + ways[i] == Me[j] + ways[j]) break;
+                }
+                if (j != AgentsCount) break;
+            }
+            if (i == AgentsCount) return ways;
+
+            //真面目に探索する
+            int maxScore = -100;
+            for (i = 0; i < (WayEnumrator.Length << (AgentsCount * 3)); ++i)
+            {
+                Unsafe8Array<Point> next = new Unsafe8Array<Point>();
+                int score = 0;
+                for (j = 0; j < AgentsCount; ++j)
+                {
+                    int way = (i >> (j * 3)) % WayEnumrator.Length;
+                    next[j] = Me[j] + WayEnumrator[way];
+                    if (next[j].X >= MeBoard.Width || next[j].Y >= MeBoard.Height) continue;
+                    bool b = false;
+                    for(int k = 0; k < AgentsCount; ++k)
+                    {
+                        if (Enemy[k] == next[j])
+                        {
+                            b = true;
+                            break;
+                        }
+                    }
+                    if (b) continue;
+                    score += (MeBoard[next[j]] == true) ? 0 : ScoreBoard[next[j].X, next[j].Y];
+                }
+                if(maxScore < score)
+                {
+                    maxScore = score;
+                    for (j = 0; j < AgentsCount; ++j)
+                    {
+                        int way = (i >> (j * 3)) % WayEnumrator.Length;
+                        ways[j] = WayEnumrator[way];
+                    }
+                }
+            }
+            return ways;
+        }
+
+        //Search Stateを更新する (MeとEnemyの入れ替えも忘れずに）（呼び出し時の前提：Validな動きである）
+        public void Move(Unsafe8Array<VelocityPoint> way, int AgentsCount)
+        {
+            Unsafe8Array<Point> next = new Unsafe8Array<Point>();
+            for(int i = 0; i < AgentsCount; ++i)
+            {
+                next[i] = Me[i] + way[i];
+            }
+
+
+            for(int i = 0; i < AgentsCount; ++i)
+            {
+                if (EnemyBoard[next[i]])  //タイル除去
+                {
+                    EnemyBoard[next[i]] = false;
+                }
+                else  //移動
+                {
+                    MeBoard[next[i]] = true;
+                    Me.Agent1 = next[i];
+                }
+            }
+
+            //MeとEnemyの入れ替え（手番の入れ替え）
+            Swap(ref MeBoard, ref EnemyBoard);
+            Swap(ref Me, ref Enemy);
+        }
+
         //内容が等しいか？
         public bool Equals(SearchState st, int agentCount)
 		{
@@ -81,12 +186,12 @@ namespace AngryBee.Search
             return true;
 		}
 
-		//Swap関数
-		//private static void Swap<T>(ref T a, ref T b)
-		//{
-		//	var t = a;
-		//	a = b;
-		//	b = t;
-		//}
-	}
+        //Swap関数
+        private static void Swap<T>(ref T a, ref T b)
+        {
+            var t = a;
+            a = b;
+            b = t;
+        }
+    }
 }
