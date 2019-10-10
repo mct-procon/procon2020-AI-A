@@ -69,7 +69,7 @@ namespace AngryBee.PointEvaluator
                     }
                 }
             rec = rec / checkedCount * DispersionRate;
-            return (int)rec + result;
+            return (int)rec + result + checkedCount;
         }
 
         public unsafe void BadSpaceFill(ref ColoredBoardNormalSmaller Checker, byte width, byte height)

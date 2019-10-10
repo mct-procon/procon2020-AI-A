@@ -24,14 +24,15 @@ namespace AngryBee.Search
 
     public struct Way : IComparable
     {
+        public sbyte Point { get; set; }
         public VelocityPoint Direction { get; set; }
         public Point Locate { get; set; }
-        public sbyte Point { get; set; }
+        
         public Way(in VelocityPoint direction, in Point locate)
         {
+            Point = 0;
             Direction = direction;
             Locate = locate;
-            Point = 0;
         }
 
         public int CompareTo(object obj) => ((Way)obj).Point - this.Point;

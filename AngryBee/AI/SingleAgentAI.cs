@@ -168,7 +168,6 @@ namespace AngryBee.AI
                     if (k != watch_deepness) break;
                 }
                 if (j != nowAgent) continue;
-
                 for (j = 0; j < AgentsCount; ++j)
                 {
                     if (j == nowAgent) continue;
@@ -179,13 +178,13 @@ namespace AngryBee.AI
 
                 Unsafe8Array<Way> newways = new Unsafe8Array<Way>();
                 newways[nowAgent] = way;
-                nextways[nowAgent] = way;
                 SearchState backup = state;
                 state = state.GetNextState(AgentsCount, newways);
 
                 int res = NegaMax(deepness - 1, state, alpha, count + 1, evaluator, ngMove, nextways, nowAgent, watch_deepness);
                 if (alpha < res)
                 {
+                    nextways[nowAgent] = way;
                     alpha = res;
                     if (ngMove is null) { dp1[count].UpdateScore(alpha, nextways); }
                     else { dp2[count].UpdateScore(alpha, nextways); }
@@ -202,7 +201,7 @@ namespace AngryBee.AI
 
         protected override int CalculateTimerMiliSconds(int miliseconds)
         {
-            return miliseconds - 1000;
+            return miliseconds - 500;
         }
 
         protected override void EndGame(GameEnd end)

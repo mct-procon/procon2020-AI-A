@@ -181,13 +181,13 @@ namespace AngryBee.AI
 
                 Unsafe8Array<Way> newways = new Unsafe8Array<Way>();
                 newways[nowAgent] = way;
-                nextways[nowAgent] = way;
                 SearchState backup = state;
                 state = state.GetNextState(AgentsCount, newways);
                 
                 int res = NegaMax(deepness - 1, state, alpha, count + 1, evaluator, ngMove, nextways, nowAgent);
                 if (alpha < res)
                 {
+                    nextways[nowAgent] = way;
                     alpha = res;
                     if (ngMove is null) { dp1[count].UpdateScore(alpha, nextways); }
                     else { dp2[count].UpdateScore(alpha, nextways); }
@@ -201,6 +201,7 @@ namespace AngryBee.AI
             ways.End();
             return alpha;
         }
+
 
         protected override int CalculateTimerMiliSconds(int miliseconds)
         {

@@ -160,14 +160,15 @@ namespace AngryBee.AI
                 //if (count == 0 && !(ngMove is null) && new Decided(ways[i].Agent1Way, ways[i].Agent2Way).Equals(ngMove)) { continue; }	//競合手を避ける場合
                 if (count == 0 && !(ngMove is null))    //2人とも競合手とは違う手を指す
                 {
-                    for(i = 0; i < AgentsCount; ++i)
+                    int j;
+                    for(j = 0; j < AgentsCount; ++j)
                     {
-                        if (sways[i].Equals(ngMove.Agents[i]))
+                        if (sways[i].Equals(ngMove.Agents[j]))
                         {
                             break;
                         }
                     }
-                    if (i != AgentsCount) continue;
+                    if (j != AgentsCount) continue;
                 }
 
                 SearchState nextState = state;

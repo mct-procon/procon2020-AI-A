@@ -8,13 +8,12 @@ using AngryBee.Search;
 using System.Linq;
 
 
-//TODO
-#if false
 namespace AngryBee.AI
 {
     public class DifferEvaluation : MCTProcon30Protocol.AIFramework.AIBase
     {
         PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
+        PointEvaluator.Base PointEvaluator_Dispersion2 = new PointEvaluator.Dispersion2();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
 
         private class DP
@@ -60,6 +59,7 @@ namespace AngryBee.AI
             int deepness = StartDepth;
             int maxDepth = (TurnCount - CurrentTurn) + 1;
             PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
+            PointEvaluator.Base evaluator2 = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion2;
             SearchState state = new SearchState(MyBoard, EnemyBoard, MyAgents, EnemyAgents);
             int score = PointEvaluator_Normal.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - PointEvaluator_Normal.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me);
 
@@ -87,7 +87,10 @@ namespace AngryBee.AI
                 for (int agent = 0; agent < AgentsCount; ++agent)
                 {
                     Unsafe8Array<Way> nextways = dp1[0].Ways;
-                    NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent);
+                    if(agent % 3 == 0)
+                        NegaMax(deepness, state, int.MinValue + 1, 0, evaluator2, null, nextways, agent);
+                    else
+                        NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent);
                 }
                 Decision best1 = new Decision(Unsafe8Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
                 resultList.Add(best1);
@@ -103,7 +106,10 @@ namespace AngryBee.AI
                     for (int agent = 0; agent < AgentsCount; ++agent)
                     {
                         Unsafe8Array<Way> nextways = dp2[0].Ways;
-                        NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, best1, nextways, agent);
+                        if (agent % 3 == 0)
+                            NegaMax(deepness, state, int.MinValue + 1, 0, evaluator2, best1, nextways, agent);
+                        else
+                            NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, best1, nextways, agent);
                     }
                     Decision best2 = new Decision(Unsafe8Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
                     resultList.Add(best2);
@@ -184,13 +190,13 @@ namespace AngryBee.AI
 
                 Unsafe8Array<Way> newways = new Unsafe8Array<Way>();
                 newways[nowAgent] = way;
-                nextways[nowAgent] = way;
                 SearchState backup = state;
                 state = state.GetNextState(AgentsCount, newways);
 
                 int res = NegaMax(deepness - 1, state, alpha, count + 1, evaluator, ngMove, nextways, nowAgent);
                 if (alpha < res)
                 {
+                    nextways[nowAgent] = way;
                     alpha = res;
                     if (ngMove is null) { dp1[count].UpdateScore(alpha, nextways); }
                     else { dp2[count].UpdateScore(alpha, nextways); }
@@ -207,7 +213,7 @@ namespace AngryBee.AI
 
         protected override int CalculateTimerMiliSconds(int miliseconds)
         {
-            return miliseconds - 1000;
+            return miliseconds - 700;
         }
 
         protected override void EndGame(GameEnd end)
@@ -215,4 +221,3 @@ namespace AngryBee.AI
         }
     }
 }
-#endif
