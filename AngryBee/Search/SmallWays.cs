@@ -1,4 +1,4 @@
-﻿using MCTProcon30Protocol;
+﻿using MCTProcon31Protocol;
 using System;
 using System.Buffers;
 using System.Collections;
@@ -25,9 +25,9 @@ namespace AngryBee.Search
     public struct SmallWay : IComparable
     {
         public int Point { get; set; }
-        public Unsafe8Array<Way> AgentsWay { get; set; }
+        public Unsafe16Array<Way> AgentsWay { get; set; }
 
-        public SmallWay(Unsafe8Array<Way> a)
+        public SmallWay(Unsafe16Array<Way> a)
         {
             AgentsWay = a;
             Point = 0;

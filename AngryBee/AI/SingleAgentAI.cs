@@ -2,15 +2,15 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon30Protocol.Methods;
-using MCTProcon30Protocol;
+using MCTProcon31Protocol.Methods;
+using MCTProcon31Protocol;
 using AngryBee.Search;
 using System.Linq;
 
 
 namespace AngryBee.AI
 {
-    public class SingleAgentAI : MCTProcon30Protocol.AIFramework.AIBase
+    public class SingleAgentAI : MCTProcon31Protocol.AIFramework.AIBase
     {
         PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
@@ -18,9 +18,9 @@ namespace AngryBee.AI
         private class DP
         {
             public int Score { get; set; } = -10000;
-            public Unsafe8Array<Way> Ways { get; set; }
+            public Unsafe16Array<Way> Ways { get; set; }
 
-            public void UpdateScore(int score, Unsafe8Array<Way> ways)
+            public void UpdateScore(int score, Unsafe16Array<Way> ways)
             {
                 if (Score < score)
                 {
@@ -51,8 +51,8 @@ namespace AngryBee.AI
             {
                 dp1[i].Score = int.MinValue;
                 dp2[i].Score = int.MinValue;
-                dp1[i].Ways = new Unsafe8Array<Way>();
-                dp2[i].Ways = new Unsafe8Array<Way>();
+                dp1[i].Ways = new Unsafe16Array<Way>();
+                dp2[i].Ways = new Unsafe16Array<Way>();
             }
 
             int deepness = StartDepth;
@@ -84,10 +84,10 @@ namespace AngryBee.AI
                 //普通にNegaMaxをして、最善手を探す
                 for (int agent = 0; agent < AgentsCount; ++agent)
                 {
-                    Unsafe8Array<Way> nextways = dp1[0].Ways;
+                    Unsafe16Array<Way> nextways = dp1[0].Ways;
                     NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent, deepness);
                 }
-                Decision best1 = new Decision(Unsafe8Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                Decision best1 = new Decision(Unsafe16Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
                 resultList.Add(best1);
                 //競合手.Agent1 == 最善手.Agent1 && 競合手.Agent2 == 最善手.Agent2になった場合、競合手をngMoveとして探索をおこない、最善手を探す
                 for (int i = 0; i < AgentsCount; ++i)
@@ -100,10 +100,10 @@ namespace AngryBee.AI
 
                     for (int agent = 0; agent < AgentsCount; ++agent)
                     {
-                        Unsafe8Array<Way> nextways = dp2[0].Ways;
+                        Unsafe16Array<Way> nextways = dp2[0].Ways;
                         NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, best1, nextways, agent, deepness);
                     }
-                    Decision best2 = new Decision(Unsafe8Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                    Decision best2 = new Decision(Unsafe16Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
                     resultList.Add(best2);
                 }
 
@@ -133,7 +133,7 @@ namespace AngryBee.AI
 
         //Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
         //NegaMaxではない
-        private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe8Array<Way> nextways, int nowAgent, int watch_deepness)
+        private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe16Array<Way> nextways, int nowAgent, int watch_deepness)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             if (deepness == 0)
@@ -176,7 +176,7 @@ namespace AngryBee.AI
                 if (j != AgentsCount) continue;
                 
 
-                Unsafe8Array<Way> newways = new Unsafe8Array<Way>();
+                Unsafe16Array<Way> newways = new Unsafe16Array<Way>();
                 newways[nowAgent] = way;
                 SearchState backup = state;
                 state = state.GetNextState(AgentsCount, newways);

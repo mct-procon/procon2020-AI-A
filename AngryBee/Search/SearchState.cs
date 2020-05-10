@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon30Protocol.Methods;
-using MCTProcon30Protocol;
+using MCTProcon31Protocol.Methods;
+using MCTProcon31Protocol;
 using AngryBee.Boards;
 
 namespace AngryBee.Search
@@ -11,12 +11,12 @@ namespace AngryBee.Search
     {
 		public ColoredBoardNormalSmaller MeBoard;
 		public ColoredBoardNormalSmaller EnemyBoard;
-		public Unsafe8Array<Point> Me;
-		public Unsafe8Array<Point> Enemy;
+		public Unsafe16Array<Point> Me;
+		public Unsafe16Array<Point> Enemy;
 
         private SearchState() { }
 
-        public SearchState(in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Unsafe8Array<Point> Me, in Unsafe8Array<Point> Enemy)
+        public SearchState(in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Unsafe16Array<Point> Me, in Unsafe16Array<Point> Enemy)
 		{
 			this.MeBoard = MeBoard;
 			this.EnemyBoard = EnemyBoard;
@@ -27,7 +27,7 @@ namespace AngryBee.Search
         //全ての指示可能な方向を求めて, (way1[i], way2[i])に入れる。(Meが動くとする)
         public Ways MakeMoves(int AgentsCount, sbyte[,] ScoreBoard) => new Ways(this, AgentsCount, ScoreBoard);
 
-        public SearchState GetNextState(int AgentsCount, Unsafe8Array<Way> ways)
+        public SearchState GetNextState(int AgentsCount, Unsafe16Array<Way> ways)
         {
             var ss = new SearchState();
             ss.MeBoard = this.MeBoard;
@@ -60,11 +60,12 @@ namespace AngryBee.Search
         }
 
         //タイルスコア最大の手を返す（MakeMoves -> SortMovesで0番目に来る手を返す）探索延長を高速化するために使用。
-        public Unsafe8Array<VelocityPoint> MakeGreedyMove(sbyte[,] ScoreBoard, VelocityPoint[] WayEnumrator, int AgentsCount)
+        public Unsafe16Array<VelocityPoint> MakeGreedyMove(sbyte[,] ScoreBoard, VelocityPoint[] WayEnumrator, int AgentsCount)
         {
+            byte width = (byte)ScoreBoard.GetLength(0), height = (byte)ScoreBoard.GetLength(1);
             int i, j;
             int[] Score = { -100, -100, -100, -100, -100, -100, -100, -100 };
-            Unsafe8Array<VelocityPoint> ways = new Unsafe8Array<VelocityPoint>();
+            Unsafe16Array<VelocityPoint> ways = new Unsafe16Array<VelocityPoint>();
 
             //自分2人が被るかのチェックをしないで、最大の組み合わせを探す
             for (i = 0; i < AgentsCount; ++i)
@@ -72,7 +73,7 @@ namespace AngryBee.Search
                 for (j = 0; j < WayEnumrator.Length; j++)
                 {
                     Point next = Me[i] + WayEnumrator[j];
-                    if (next.X >= MeBoard.Width || next.Y >= MeBoard.Height) continue;
+                    if (next.X >= width || next.Y >= height) continue;
                     bool b = false;
                     for(int k = 0; k < AgentsCount; ++k)
                     {
@@ -104,13 +105,13 @@ namespace AngryBee.Search
             int maxScore = -100;
             for (i = 0; i < (WayEnumrator.Length << (AgentsCount * 3)); ++i)
             {
-                Unsafe8Array<Point> next = new Unsafe8Array<Point>();
+                Unsafe16Array<Point> next = new Unsafe16Array<Point>();
                 int score = 0;
                 for (j = 0; j < AgentsCount; ++j)
                 {
                     int way = (i >> (j * 3)) % WayEnumrator.Length;
                     next[j] = Me[j] + WayEnumrator[way];
-                    if (next[j].X >= MeBoard.Width || next[j].Y >= MeBoard.Height) continue;
+                    if (next[j].X >= width || next[j].Y >= height) continue;
                     bool b = false;
                     for(int k = 0; k < AgentsCount; ++k)
                     {
@@ -137,9 +138,9 @@ namespace AngryBee.Search
         }
 
         //Search Stateを更新する (MeとEnemyの入れ替えも忘れずに）（呼び出し時の前提：Validな動きである）
-        public void Move(Unsafe8Array<VelocityPoint> way, int AgentsCount)
+        public void Move(Unsafe16Array<VelocityPoint> way, int AgentsCount)
         {
-            Unsafe8Array<Point> next = new Unsafe8Array<Point>();
+            Unsafe16Array<Point> next = new Unsafe16Array<Point>();
             for(int i = 0; i < AgentsCount; ++i)
             {
                 next[i] = Me[i] + way[i];
@@ -167,6 +168,8 @@ namespace AngryBee.Search
         //内容が等しいか？
         public bool Equals(SearchState st, int agentCount)
 		{
+            // TODO: Restore implementation.
+#if false
 #if DEBUG
             if (MeBoard.Height != st.MeBoard.Height) return false;
 			if (MeBoard.Width != st.MeBoard.Width) return false;
@@ -181,9 +184,11 @@ namespace AngryBee.Search
 				for (uint j = 0; j < EnemyBoard.Width; j++)
 					if (EnemyBoard[new Point((byte)j, (byte)i)] != st.EnemyBoard[new Point((byte)j, (byte)i)]) return false;
 
-			if (!Unsafe8Array<Point>.Equals(Me, st.Me, agentCount)) return false;
-			if (!Unsafe8Array<Point>.Equals(Enemy, st.Enemy, agentCount)) return false;
+			if (!Unsafe16Array<Point>.Equals(Me, st.Me, agentCount)) return false;
+			if (!Unsafe16Array<Point>.Equals(Enemy, st.Enemy, agentCount)) return false;
             return true;
+#endif
+            throw new NotImplementedException();
 		}
 
         //Swap関数

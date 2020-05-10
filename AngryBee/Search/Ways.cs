@@ -1,4 +1,4 @@
-﻿using MCTProcon30Protocol;
+﻿using MCTProcon31Protocol;
 using System;
 using System.Buffers;
 using System.Collections;
@@ -49,8 +49,8 @@ namespace AngryBee.Search
 
         public Ways(in SearchState searchState, int AgentsCount, sbyte[,] ScoreBoard)
         {
-            uint W = searchState.MeBoard.Width;
-            uint H = searchState.MeBoard.Height;
+            uint W = (uint)ScoreBoard.GetLength(0);
+            uint H = (uint)ScoreBoard.GetLength(1);
             Data = ArrayPool<Way[]>.Shared.Rent(AgentsCount);
             ActualCount = ArrayPool<int>.Shared.Rent(AgentsCount);
             for (int agent = 0; agent < AgentsCount; ++agent)
@@ -90,18 +90,18 @@ namespace AngryBee.Search
         public WayEnumerator GetEnumerator(int agentsCount) => new WayEnumerator(this, agentsCount);
     }
 
-    public class WayEnumerator : IEnumerator<Unsafe8Array<Way>>
+    public class WayEnumerator : IEnumerator<Unsafe16Array<Way>>
     {
         public Ways Parent { get; set; }
         public int AgentsCount { get; set; }
         private ulong Iterator = 0;
         private bool isHead = true;
-        public unsafe Unsafe8Array<Way> Current {
+        public unsafe Unsafe16Array<Way> Current {
             get {
                 fixed (ulong* ll = &Iterator)
                 {
                     byte* itrs = (byte*)ll;
-                    Unsafe8Array<Way> ret = new Unsafe8Array<Way>();
+                    Unsafe16Array<Way> ret = new Unsafe16Array<Way>();
                     for (int i = 0; i < AgentsCount; ++i)
                         ret[i] = Parent.Data[i][itrs[i]];
                     return ret;

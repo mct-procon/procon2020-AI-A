@@ -3,15 +3,15 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon30Protocol.Methods;
-using MCTProcon30Protocol;
+using MCTProcon31Protocol.Methods;
+using MCTProcon31Protocol;
 using AngryBee.Search;
 
 //TODO
 #if FALSE
 namespace AngryBee.AI
 {
-    public class AokiAI : MCTProcon30Protocol.AIFramework.AIBase
+    public class AokiAI : MCTProcon31Protocol.AIFramework.AIBase
     {
         //PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
         PointEvaluator.Base PointEvaluator_Distance = new PointEvaluator.Distance();
@@ -20,9 +20,9 @@ namespace AngryBee.AI
         private class DP
         {
             public int Score { get; set; } = -10000;
-            public Unsafe8Array<Way> Ways { get; set; }
+            public Unsafe16Array<Way> Ways { get; set; }
 
-            public void UpdateScore(int score, Unsafe8Array<Way> ways)
+            public void UpdateScore(int score, Unsafe16Array<Way> ways)
             {
                 if (Score < score)
                 {
@@ -91,7 +91,7 @@ namespace AngryBee.AI
 
                 //普通にNegaMaxをして、最善手を探す
                 NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, null, greedyDepth);
-                Decision best1 = new Decision(Unsafe8Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                Decision best1 = new Decision(Unsafe16Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
                 resultList.Add(best1);
 
                 //競合手.Agent == 最善手.Agent の数が半数以上になった場合、競合手をngMoveとして探索をおこない、最善手を探す
@@ -104,7 +104,7 @@ namespace AngryBee.AI
                 if (UnMoveAgentNum > AgentsCount/2)
                 {
                     NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, best1, greedyDepth);
-                    Decision best2 = new Decision(Unsafe8Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                    Decision best2 = new Decision(Unsafe16Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
                     resultList.Add(best2);
                 }
 
@@ -183,13 +183,13 @@ namespace AngryBee.AI
         //ルール2では, タイル除去によっても「タイルポイント」が得られるとして計算する。
         private void SortMoves(sbyte[,] ScoreBoard, SearchState state, Ways way, int deep, Decision ngMove)
         {
-            Unsafe8Array<Point> Killer;
+            Unsafe16Array<Point> Killer;
             DP[] dp = ngMove is null ? dp1 : dp2;
             if (dp[deep].Score == int.MinValue)
-                Killer = Unsafe8Array<Point>.Create(new Point(114, 191), new Point(114, 191), new Point(114, 191), new Point(114, 191), new Point(114, 191), new Point(114, 191), new Point(114, 191), new Point(114, 191));
+                Killer = Unsafe16Array<Point>.Create(new Point(114, 191), new Point(114, 191), new Point(114, 191), new Point(114, 191), new Point(114, 191), new Point(114, 191), new Point(114, 191), new Point(114, 191));
             else
             {
-                Killer = new Unsafe8Array<Point>();
+                Killer = new Unsafe16Array<Point>();
                 for(int i = 0; i < AgentsCount; ++i)
                     Killer[i] = state.Me[i] + dp[deep].AgentsWay[i];
             }
@@ -197,7 +197,7 @@ namespace AngryBee.AI
             for (int i = 0; i < way.Count; i++)
             {
                 int score = 0;
-                Unsafe8Array<Point> nexts = new Unsafe8Array<Point>();
+                Unsafe16Array<Point> nexts = new Unsafe16Array<Point>();
                 for (int n = 0; n < AgentsCount; ++i)
                     nexts[n] = state.Me[n] + way[i].AgentWays[n];
 

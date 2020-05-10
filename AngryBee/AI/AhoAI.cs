@@ -2,14 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon30Protocol.Methods;
-using MCTProcon30Protocol;
+using MCTProcon31Protocol.Methods;
+using MCTProcon31Protocol;
 using AngryBee.Search;
 using System.Linq;
 
 namespace AngryBee.AI
 {
-	public class AhoAI : MCTProcon30Protocol.AIFramework.AIBase
+	public class AhoAI : MCTProcon31Protocol.AIFramework.AIBase
 	{
 		PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
 		PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
@@ -17,9 +17,9 @@ namespace AngryBee.AI
 		private class DP
 		{
             public int Score { get; set; } = -10000;
-            public Unsafe8Array<Way> Ways { get; set; }
+            public Unsafe16Array<Way> Ways { get; set; }
 
-			public void UpdateScore(int score, Unsafe8Array<Way> ways)
+			public void UpdateScore(int score, Unsafe16Array<Way> ways)
 			{
 				if (Score < score)
 				{
@@ -53,7 +53,7 @@ namespace AngryBee.AI
 			{
 				NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator);
 				if (CancellationToken.IsCancellationRequested == false)
-					SolverResult = new Decision(Unsafe8Array<VelocityPoint>.Create(dp[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+					SolverResult = new Decision(Unsafe16Array<VelocityPoint>.Create(dp[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
 				else
 					break;
 				Log("[SOLVER] deepness = {0}", deepness);

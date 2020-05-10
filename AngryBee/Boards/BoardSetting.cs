@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon30Protocol;
+using MCTProcon31Protocol;
 
 namespace AngryBee.Boards
 {

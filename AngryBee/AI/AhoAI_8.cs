@@ -2,15 +2,15 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon30Protocol.Methods;
-using MCTProcon30Protocol;
+using MCTProcon31Protocol.Methods;
+using MCTProcon31Protocol;
 using AngryBee.Search;
 using System.Linq;
 
 
 namespace AngryBee.AI
 {
-    public class AhoAI_8 : MCTProcon30Protocol.AIFramework.AIBase
+    public class AhoAI_8 : MCTProcon31Protocol.AIFramework.AIBase
     {
         PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
@@ -18,9 +18,9 @@ namespace AngryBee.AI
         private class DP
         {
             public int Score { get; set; } = -10000;
-            public Unsafe8Array<Way> Ways { get; set; }
+            public Unsafe16Array<Way> Ways { get; set; }
 
-            public void UpdateScore(int score, Unsafe8Array<Way> ways)
+            public void UpdateScore(int score, Unsafe16Array<Way> ways)
             {
                 if (Score < score)
                 {
@@ -47,7 +47,7 @@ namespace AngryBee.AI
             for (int i = 0; i < 50; ++i)
             {
                 dp[i].Score = int.MinValue;
-                dp[i].Ways = new Unsafe8Array<Way>();
+                dp[i].Ways = new Unsafe16Array<Way>();
             }
 
             int deepness = StartDepth;
@@ -60,19 +60,19 @@ namespace AngryBee.AI
             
             for (int agent = 0; agent < AgentsCount; ++agent)
             {
-                Unsafe8Array<Way> nextways = dp[0].Ways;
+                Unsafe16Array<Way> nextways = dp[0].Ways;
                 NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent);
             }
 
             if (CancellationToken.IsCancellationRequested == false)
             {
-                SolverResult = new Decision(Unsafe8Array<VelocityPoint>.Create(dp[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                SolverResult = new Decision(Unsafe16Array<VelocityPoint>.Create(dp[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
             }
         }
 
         //Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
         //NegaMaxではない
-        private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe8Array<Way> nextways, int nowAgent)
+        private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe16Array<Way> nextways, int nowAgent)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             if (deepness == 0)
@@ -99,7 +99,7 @@ namespace AngryBee.AI
                 }
                 if (j != nowAgent) continue;
 
-                Unsafe8Array<Way> newways = new Unsafe8Array<Way>();
+                Unsafe16Array<Way> newways = new Unsafe16Array<Way>();
                 newways[nowAgent] = way;
                 SearchState backup = state;
                 state = state.GetNextState(AgentsCount, newways);

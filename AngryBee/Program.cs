@@ -1,6 +1,6 @@
 ﻿using System;
-using MCTProcon30Protocol;
-using MCTProcon30Protocol.Methods;
+using MCTProcon31Protocol;
+using MCTProcon31Protocol.Methods;
 
 namespace AngryBee
 {
@@ -12,7 +12,7 @@ namespace AngryBee
 			Console.WriteLine("AIの種類を入力(0:Aho, 1:Naotti, 2:Aoki_8, 3:Aho_8, 4:SA_AI, 5:DifEva, 6:Beam)");
 			aiType = int.Parse(Console.ReadLine());
 
-			MCTProcon30Protocol.AIFramework.AIBase AI = null;
+			MCTProcon31Protocol.AIFramework.AIBase AI = null;
 
 			if (aiType == 0) { AI = new AI.AhoAI(); }
 			if (aiType == 1) {

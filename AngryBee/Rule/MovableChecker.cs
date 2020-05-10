@@ -2,17 +2,15 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MCTProcon30Protocol;
+using MCTProcon31Protocol;
 
 namespace AngryBee.Rule
 {
     public class MovableChecker
     {
-        public MovableResult MovableCheck(in ColoredBoardNormalSmaller MeField, in ColoredBoardNormalSmaller EnemyField, Unsafe8Array<Point> oldMe, Unsafe8Array<Point> Me, Unsafe8Array<Point> Enemy, int AgentsCount )
+        public MovableResult MovableCheck(uint width, uint height, in ColoredBoardNormalSmaller MeField, in ColoredBoardNormalSmaller EnemyField, Unsafe16Array<Point> oldMe, Unsafe16Array<Point> Me, Unsafe16Array<Point> Enemy, int AgentsCount )
         {
             MovableResult result = new MovableResult();
-
-            uint width = MeField.Width, height = MeField.Height;
 
             bool notMovable = false;
             for(int i = 0; i < AgentsCount; ++i)
