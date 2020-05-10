@@ -9,6 +9,8 @@ namespace AngryBee.PointEvaluator
     //フィールドの中心を重心とし、分散を計算する。
     class DispersionFromCenter : Base
     {
+        readonly int[] DistanceX = { 0, 1, 0, -1, 1, 1, -1, -1 };
+        readonly int[] DistanceY = { 1, 0, -1, 0, -1, 1, 1, -1 };
         const float DispersionRate = 0.5f;
         private struct PointFloat
         {
@@ -77,7 +79,7 @@ namespace AngryBee.PointEvaluator
                 Point* myStack = stackalloc Point[20 * 20];
 
                 Point point;
-                byte x, y, searchTo = 0, myStackSize = 0;
+                byte x, y, searchTo = 0, searchToX, searchToY, myStackSize = 0;
 
                 searchTo = (byte)(height - 1);
                 for (x = 0; x < width; x++)
@@ -115,36 +117,15 @@ namespace AngryBee.PointEvaluator
                     x = point.X;
                     y = point.Y;
 
-                    //左方向
-                    searchTo = (byte)(x - 1);
-                    if (searchTo < width && !Checker[searchTo, y])
+                    for (int i = 0; i < 8; i++)
                     {
-                        myStack[myStackSize++] = new Point(searchTo, y);
-                        Checker[searchTo, y] = true;
-                    }
-
-                    //下方向
-                    searchTo = (byte)(y + 1);
-                    if (searchTo < height && !Checker[x, searchTo])
-                    {
-                        myStack[myStackSize++] = new Point(x, searchTo);
-                        Checker[x, searchTo] = true;
-                    }
-
-                    //右方向
-                    searchTo = (byte)(x + 1);
-                    if (searchTo < width && !Checker[searchTo, y])
-                    {
-                        myStack[myStackSize++] = new Point(searchTo, y);
-                        Checker[searchTo, y] = true;
-                    }
-
-                    //上方向
-                    searchTo = (byte)(y - 1);
-                    if (searchTo < height && !Checker[x, searchTo])
-                    {
-                        myStack[myStackSize++] = new Point(x, searchTo);
-                        Checker[x, searchTo] = true;
+                        searchToX = (byte)(x + DistanceX[i]);
+                        searchToY = (byte)(y + DistanceY[i]);
+                        if (searchToX < width && searchToY < height && !Checker[searchToX, searchToY])
+                        {
+                            myStack[myStackSize++] = new Point(searchToX, searchToY);
+                            Checker[searchToX, searchToY] = true;
+                        }
                     }
                 }
             }
