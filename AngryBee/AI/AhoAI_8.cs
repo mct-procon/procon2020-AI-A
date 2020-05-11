@@ -66,7 +66,7 @@ namespace AngryBee.AI
 
             if (CancellationToken.IsCancellationRequested == false)
             {
-                SolverResult = new Decision(Unsafe16Array<VelocityPoint>.Create(dp[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                SolverResult = new Decision((byte)AgentsCount, Unsafe16Array<VelocityPoint>.Create(dp[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
             }
         }
 

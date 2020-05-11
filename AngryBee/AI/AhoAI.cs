@@ -53,7 +53,7 @@ namespace AngryBee.AI
 			{
 				NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator);
 				if (CancellationToken.IsCancellationRequested == false)
-					SolverResult = new Decision(Unsafe16Array<VelocityPoint>.Create(dp[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+					SolverResult = new Decision((byte)AgentsCount, Unsafe16Array<VelocityPoint>.Create(dp[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
 				else
 					break;
 				Log("[SOLVER] deepness = {0}", deepness);
