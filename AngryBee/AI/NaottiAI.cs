@@ -7,6 +7,8 @@ using MCTProcon31Protocol;
 using AngryBee.Search;
 using System.Linq;
 
+//異様に遅い
+#if false
 namespace AngryBee.AI
 {
     public class NaottiAI : MCTProcon31Protocol.AIFramework.AIBase
@@ -56,7 +58,9 @@ namespace AngryBee.AI
 			{
 				dp1[i].Score = int.MinValue;
 				dp2[i].Score = int.MinValue;
-			}
+                dp1[i].Ways = new Unsafe16Array<Way>();
+                dp2[i].Ways = new Unsafe16Array<Way>();
+            }
 
             int deepness = StartDepth;
             int maxDepth = (TurnCount - CurrentTurn) * 2 + 2;
@@ -271,3 +275,4 @@ namespace AngryBee.AI
         }
     }
 }
+#endif
