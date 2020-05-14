@@ -25,16 +25,16 @@ namespace AngryBee.Search
         }
 
         //全ての指示可能な方向を求めて, (way1[i], way2[i])に入れる。(Meが動くとする)
-        public Ways MakeMoves(int AgentsCount, sbyte[,] ScoreBoard) => new Ways(this, AgentsCount, ScoreBoard);
+        public Ways MakeMoves(int MyAgentsCount, int EnemyAgentsCount, sbyte[,] ScoreBoard) => new Ways(this, MyAgentsCount, EnemyAgentsCount, ScoreBoard);
 
-        public SearchState GetNextState(int AgentsCount, Unsafe16Array<Way> ways)
+        public SearchState GetNextState(int MyAgentsCount, Unsafe16Array<Way> ways)
         {
             var ss = new SearchState();
             ss.MeBoard = this.MeBoard;
             ss.EnemyBoard = this.EnemyBoard;
             ss.Me = this.Me;
             ss.Enemy = this.Enemy;
-            for (int i = 0; i < AgentsCount; ++i)
+            for (int i = 0; i < MyAgentsCount; ++i)
             {
                 if (ways[i].Direction == new VelocityPoint()) continue;
                 var l = ways[i].Locate;
@@ -60,7 +60,7 @@ namespace AngryBee.Search
         }
 
         //タイルスコア最大の手を返す（MakeMoves -> SortMovesで0番目に来る手を返す）探索延長を高速化するために使用。
-        public Unsafe16Array<VelocityPoint> MakeGreedyMove(sbyte[,] ScoreBoard, VelocityPoint[] WayEnumrator, int AgentsCount)
+        public Unsafe16Array<VelocityPoint> MakeGreedyMove(sbyte[,] ScoreBoard, VelocityPoint[] WayEnumrator, int MyAgentsCount, int EnemyAgentsCount)
         {
             byte width = (byte)ScoreBoard.GetLength(0), height = (byte)ScoreBoard.GetLength(1);
             int i, j;
@@ -68,14 +68,14 @@ namespace AngryBee.Search
             Unsafe16Array<VelocityPoint> ways = new Unsafe16Array<VelocityPoint>();
 
             //自分2人が被るかのチェックをしないで、最大の組み合わせを探す
-            for (i = 0; i < AgentsCount; ++i)
+            for (i = 0; i < MyAgentsCount; ++i)
             {
                 for (j = 0; j < WayEnumrator.Length; j++)
                 {
                     Point next = Me[i] + WayEnumrator[j];
                     if (next.X >= width || next.Y >= height) continue;
                     bool b = false;
-                    for(int k = 0; k < AgentsCount; ++k)
+                    for(int k = 0; k < EnemyAgentsCount; ++k)
                     {
                         if (next == Enemy[k])
                         {
@@ -90,30 +90,30 @@ namespace AngryBee.Search
             }
 
 
-            for(i = 0; i < AgentsCount; ++i)
+            for(i = 0; i < MyAgentsCount; ++i)
             {
                 if (Score[i] <= -100) break;
-                for(j = i+1; j < AgentsCount; ++j)
+                for(j = i+1; j < MyAgentsCount; ++j)
                 {
                     if (Me[i] + ways[i] == Me[j] + ways[j]) break;
                 }
-                if (j != AgentsCount) break;
+                if (j != MyAgentsCount) break;
             }
-            if (i == AgentsCount) return ways;
+            if (i == MyAgentsCount) return ways;
 
             //真面目に探索する
             int maxScore = -100;
-            for (i = 0; i < (WayEnumrator.Length << (AgentsCount * 3)); ++i)
+            for (i = 0; i < (WayEnumrator.Length << (MyAgentsCount * 3)); ++i)
             {
                 Unsafe16Array<Point> next = new Unsafe16Array<Point>();
                 int score = 0;
-                for (j = 0; j < AgentsCount; ++j)
+                for (j = 0; j < MyAgentsCount; ++j)
                 {
                     int way = (i >> (j * 3)) % WayEnumrator.Length;
                     next[j] = Me[j] + WayEnumrator[way];
                     if (next[j].X >= width || next[j].Y >= height) continue;
                     bool b = false;
-                    for(int k = 0; k < AgentsCount; ++k)
+                    for(int k = 0; k < EnemyAgentsCount; ++k)
                     {
                         if (Enemy[k] == next[j])
                         {
@@ -127,7 +127,7 @@ namespace AngryBee.Search
                 if(maxScore < score)
                 {
                     maxScore = score;
-                    for (j = 0; j < AgentsCount; ++j)
+                    for (j = 0; j < MyAgentsCount; ++j)
                     {
                         int way = (i >> (j * 3)) % WayEnumrator.Length;
                         ways[j] = WayEnumrator[way];
@@ -138,16 +138,16 @@ namespace AngryBee.Search
         }
 
         //Search Stateを更新する (MeとEnemyの入れ替えも忘れずに）（呼び出し時の前提：Validな動きである）
-        public void Move(Unsafe16Array<VelocityPoint> way, int AgentsCount)
+        public void Move(Unsafe16Array<VelocityPoint> way, int MyAgentsCount)
         {
             Unsafe16Array<Point> next = new Unsafe16Array<Point>();
-            for(int i = 0; i < AgentsCount; ++i)
+            for(int i = 0; i < MyAgentsCount; ++i)
             {
                 next[i] = Me[i] + way[i];
             }
 
 
-            for(int i = 0; i < AgentsCount; ++i)
+            for(int i = 0; i < MyAgentsCount; ++i)
             {
                 if (EnemyBoard[next[i]])  //タイル除去
                 {
@@ -166,7 +166,7 @@ namespace AngryBee.Search
         }
 
         //内容が等しいか？
-        public bool Equals(SearchState st, int agentCount)
+        public bool Equals(SearchState st, int myAgentCount, int enemyAgentCount)
 		{
             // TODO: Restore implementation.
 #if false
@@ -184,8 +184,8 @@ namespace AngryBee.Search
 				for (uint j = 0; j < EnemyBoard.Width; j++)
 					if (EnemyBoard[new Point((byte)j, (byte)i)] != st.EnemyBoard[new Point((byte)j, (byte)i)]) return false;
 
-			if (!Unsafe16Array<Point>.Equals(Me, st.Me, agentCount)) return false;
-			if (!Unsafe16Array<Point>.Equals(Enemy, st.Enemy, agentCount)) return false;
+			if (!Unsafe16Array<Point>.Equals(Me, st.Me, myAgentCount)) return false;
+			if (!Unsafe16Array<Point>.Equals(Enemy, st.Enemy, enemyAgentCount)) return false;
             return true;
 #endif
             throw new NotImplementedException();

@@ -74,11 +74,11 @@ namespace AngryBee.AI
             if (!(lastTurnDecided is null) && score > 0)    //勝っている状態で競合していたら
             {
                 int i;
-                for(i = 0; i < AgentsCount; ++i)
+                for(i = 0; i < MyAgentsCount; ++i)
                 {
                     if (IsAgentsMoved[i]) break;
                 }
-                if (i == AgentsCount)
+                if (i == MyAgentsCount)
                 {
                     SolverResultList.Add(lastTurnDecided);
                     return;
@@ -91,19 +91,19 @@ namespace AngryBee.AI
                 int greedyDepth = Math.Min(greedyMaxDepth, maxDepth - deepness);
                 if ((deepness + greedyDepth) % 2 == 1 && greedyDepth > 0) greedyDepth--;
                 //普通にNegaMaxをして、最善手を探す
-                NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, null, greedyDepth);
-				Decision best1 = new Decision((byte)AgentsCount, Unsafe16Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, null, greedyDepth, MyAgentsCount, EnemyAgentsCount);
+				Decision best1 = new Decision((byte)MyAgentsCount, Unsafe16Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(MyAgentsCount).Select(x => x.Direction).ToArray()));
 				resultList.Add(best1);
                 //競合手.Agent1 == 最善手.Agent1 && 競合手.Agent2 == 最善手.Agent2になった場合、競合手をngMoveとして探索をおこない、最善手を探す
-                for (int i = 0; i < AgentsCount; ++i)
+                for (int i = 0; i < MyAgentsCount; ++i)
                 {
                     if(IsAgentsMoved[i] || !lastTurnDecided.Agents[i].Equals(best1.Agents[i]))
                     {
                         break;
                     }
-                    if (i < AgentsCount - 1) continue;
-                    NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, best1, greedyDepth);
-                    Decision best2 = new Decision((byte)AgentsCount, Unsafe16Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                    if (i < MyAgentsCount - 1) continue;
+                    NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, best1, greedyDepth, MyAgentsCount, EnemyAgentsCount);
+                    Decision best2 = new Decision((byte)MyAgentsCount, Unsafe16Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(MyAgentsCount).Select(x => x.Direction).ToArray()));
                     resultList.Add(best2);
                 }
                 
@@ -132,15 +132,15 @@ namespace AngryBee.AI
         }
 
         //Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
-        private int NegaMax(int deepness, SearchState state, int alpha, int beta, int count, PointEvaluator.Base evaluator, Decision ngMove, int greedyDepth)
+        private int NegaMax(int deepness, SearchState state, int alpha, int beta, int count, PointEvaluator.Base evaluator, Decision ngMove, int greedyDepth, int MyAgentsCount, int EnemyAgentsCount)
         {
             if (deepness == 0)
             {
                 //for (int j = 0; j < greedyDepth; j++)
                 //{
-                    //Unsafe16Array<VelocityPoint> move = state.MakeGreedyMove(ScoreBoard, WayEnumerator, AgentsCount);
-                    //state.Move(move, AgentsCount);
-                    //Ways moves = state.MakeMoves(AgentsCount, ScoreBoard);
+                    //Unsafe16Array<VelocityPoint> move = state.MakeGreedyMove(ScoreBoard, WayEnumerator, MyAgentsCount, EnemyAgentsCount);
+                    //state.Move(move, AmygentsCount);
+                    //Ways moves = state.MakeMoves(MyAgentsCount, EnemyAgentsCount, ScoreBoard);
                     //SortMoves(ScoreBoard, state, moves, 49, null);
                     //state.Move(moves[0].Agent1Way, moves[1].Agent2Way);
                 //}
@@ -149,10 +149,10 @@ namespace AngryBee.AI
                 return score;
             }
 
-            Ways ways = state.MakeMoves(AgentsCount, ScoreBoard);
-            SmallWays sways = new SmallWays(AgentsCount);
+            Ways ways = state.MakeMoves(MyAgentsCount, EnemyAgentsCount, ScoreBoard);
+            SmallWays sways = new SmallWays(MyAgentsCount);
             //ways => sways
-            foreach (var way in ways.GetEnumerator(AgentsCount))
+            foreach (var way in ways.GetEnumerator(MyAgentsCount))
             {
                 sways.Add(new SmallWay(way));
             }
@@ -165,20 +165,20 @@ namespace AngryBee.AI
                 if (count == 0 && !(ngMove is null))    //2人とも競合手とは違う手を指す
                 {
                     int j;
-                    for(j = 0; j < AgentsCount; ++j)
+                    for(j = 0; j < MyAgentsCount; ++j)
                     {
                         if (sways[i].Equals(ngMove.Agents[j]))
                         {
                             break;
                         }
                     }
-                    if (j != AgentsCount) continue;
+                    if (j != MyAgentsCount) continue;
                 }
 
                 SearchState nextState = state;
-                nextState = nextState.GetNextState(AgentsCount, sways[i].AgentsWay);
+                nextState = nextState.GetNextState(MyAgentsCount, sways[i].AgentsWay);
                 nextState = nextState.ChangeTurn();
-                int res = -NegaMax(deepness - 1, nextState, -beta, -alpha, count + 1, evaluator, ngMove, greedyDepth);
+                int res = -NegaMax(deepness - 1, nextState, -beta, -alpha, count + 1, evaluator, ngMove, greedyDepth, EnemyAgentsCount, MyAgentsCount);
                 if (alpha < res)
                 {
                     alpha = res;
@@ -207,14 +207,14 @@ namespace AngryBee.AI
 			{
                 if(dp1[deep].Score == int.MinValue)
                 {
-                    for(int i = 0; i < AgentsCount; ++i)
+                    for(int i = 0; i < MyAgentsCount; ++i)
                     {
                         Killer[i] = new Point(114, 191);
                     }
                 }
                 else
                 {
-                    for(int i = 0; i < AgentsCount; ++i)
+                    for(int i = 0; i < MyAgentsCount; ++i)
                     {
                         Killer[i] = state.Me[i] + dp1[deep].Ways[i].Direction;
                     }
@@ -224,14 +224,14 @@ namespace AngryBee.AI
 			{
                 if (dp2[deep].Score == int.MinValue)
                 {
-                    for (int i = 0; i < AgentsCount; ++i)
+                    for (int i = 0; i < MyAgentsCount; ++i)
                     {
                         Killer[i] = new Point(114, 191);
                     }
                 }
                 else
                 {
-                    for (int i = 0; i < AgentsCount; ++i)
+                    for (int i = 0; i < MyAgentsCount; ++i)
                     {
                         Killer[i] = state.Me[i] + dp2[deep].Ways[i].Direction;
                     }
@@ -242,20 +242,20 @@ namespace AngryBee.AI
             {
                 sbyte score = 0;
                 Unsafe16Array<Point> next = new Unsafe16Array<Point>();
-                for(int j = 0; j < AgentsCount; ++j)
+                for(int j = 0; j < MyAgentsCount; ++j)
                 {
                     next[j] = state.Me[j] + ways[i].AgentsWay[j].Direction;
                 }
 
-                for(int j = 0; j < AgentsCount; ++j)
+                for(int j = 0; j < MyAgentsCount; ++j)
                 {
                     if(Killer[j] != next[j])
                         break;
-                    if (j == AgentsCount - 1)
+                    if (j == MyAgentsCount - 1)
                         score = 100;
                 }
 
-                for(int j = 0; j < AgentsCount; ++j)
+                for(int j = 0; j < MyAgentsCount; ++j)
                 {
                     if (state.EnemyBoard[next[j]]) score += ScoreBoard[next[j].X, next[j].Y];    //タイル除去によって有利になる
                     else if (!state.MeBoard[next[j]]) score += ScoreBoard[next[j].X, next[j].Y]; //移動でMeの陣地が増えて有利になる

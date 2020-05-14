@@ -67,11 +67,11 @@ namespace AngryBee.AI
             if (!(lastTurnDecided is null) && score > 0)    //勝っている状態で競合していたら
             {
                 int i;
-                for (i = 0; i < AgentsCount; ++i)
+                for (i = 0; i < MyAgentsCount; ++i)
                 {
                     if (IsAgentsMoved[i]) break;
                 }
-                if (i == AgentsCount)
+                if (i == MyAgentsCount)
                 {
                     SolverResultList.Add(lastTurnDecided);
                     return;
@@ -82,28 +82,28 @@ namespace AngryBee.AI
                 Decided resultList = new Decided();
 
                 //普通にNegaMaxをして、最善手を探す
-                for (int agent = 0; agent < AgentsCount; ++agent)
+                for (int agent = 0; agent < MyAgentsCount; ++agent)
                 {
                     Unsafe16Array<Way> nextways = dp1[0].Ways;
-                    NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent);
+                    NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent, MyAgentsCount, EnemyAgentsCount);
                 }
-                Decision best1 = new Decision((byte)AgentsCount, Unsafe16Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                Decision best1 = new Decision((byte)MyAgentsCount, Unsafe16Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(MyAgentsCount).Select(x => x.Direction).ToArray()));
                 resultList.Add(best1);
                 //競合手.Agent1 == 最善手.Agent1 && 競合手.Agent2 == 最善手.Agent2になった場合、競合手をngMoveとして探索をおこない、最善手を探す
-                for (int i = 0; i < AgentsCount; ++i)
+                for (int i = 0; i < MyAgentsCount; ++i)
                 {
                     if (IsAgentsMoved[i] || !lastTurnDecided.Agents[i].Equals(best1.Agents[i]))
                     {
                         break;
                     }
-                    if (i < AgentsCount - 1) continue;
+                    if (i < MyAgentsCount - 1) continue;
 
-                    for (int agent = 0; agent < AgentsCount; ++agent)
+                    for (int agent = 0; agent < MyAgentsCount; ++agent)
                     {
                         Unsafe16Array<Way> nextways = dp2[0].Ways;
-                        NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, best1, nextways, agent);
+                        NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, best1, nextways, agent, MyAgentsCount, EnemyAgentsCount);
                     }
-                    Decision best2 = new Decision((byte)AgentsCount, Unsafe16Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                    Decision best2 = new Decision((byte)MyAgentsCount, Unsafe16Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(MyAgentsCount).Select(x => x.Direction).ToArray()));
                     resultList.Add(best2);
                 }
 
@@ -133,7 +133,7 @@ namespace AngryBee.AI
 
         //Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
         //NegaMaxではない
-        private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe16Array<Way> nextways, int nowAgent)
+        private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe16Array<Way> nextways, int nowAgent, int MyAgentsCount, int EnemyAgentsCount)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             if (deepness == 0)
@@ -141,7 +141,7 @@ namespace AngryBee.AI
                 return evaluator.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me);
             }
 
-            Ways ways = state.MakeMoves(AgentsCount, ScoreBoard);
+            Ways ways = state.MakeMoves(MyAgentsCount, EnemyAgentsCount, ScoreBoard);
 
             int i = 0;
             foreach (var way in ways.Data[nowAgent])
@@ -171,20 +171,20 @@ namespace AngryBee.AI
                     }
                     if (j != nowAgent) continue;
 
-                    for(j = 0; j < AgentsCount; ++j)
+                    for(j = 0; j < MyAgentsCount; ++j)
                     {
                         if (j == nowAgent) continue;
                         if (way.Locate == state.Me[j]) break;
                     }
-                    if (j != AgentsCount) continue;
+                    if (j != MyAgentsCount) continue;
                 }
 
                 Unsafe16Array<Way> newways = new Unsafe16Array<Way>();
                 newways[nowAgent] = way;
                 SearchState backup = state;
-                state = state.GetNextState(AgentsCount, newways);
+                state = state.GetNextState(MyAgentsCount, newways);
                 
-                int res = NegaMax(deepness - 1, state, alpha, count + 1, evaluator, ngMove, nextways, nowAgent);
+                int res = NegaMax(deepness - 1, state, alpha, count + 1, evaluator, ngMove, nextways, nowAgent, EnemyAgentsCount, MyAgentsCount);
                 if (alpha < res)
                 {
                     nextways[nowAgent] = way;

@@ -8,12 +8,12 @@ namespace AngryBee.Rule
 {
     public class MovableChecker
     {
-        public MovableResult MovableCheck(uint width, uint height, in ColoredBoardNormalSmaller MeField, in ColoredBoardNormalSmaller EnemyField, Unsafe16Array<Point> oldMe, Unsafe16Array<Point> Me, Unsafe16Array<Point> Enemy, int AgentsCount )
+        public MovableResult MovableCheck(uint width, uint height, in ColoredBoardNormalSmaller MeField, in ColoredBoardNormalSmaller EnemyField, Unsafe16Array<Point> oldMe, Unsafe16Array<Point> Me, Unsafe16Array<Point> Enemy, int MyAgentsCount )
         {
             MovableResult result = new MovableResult();
 
             bool notMovable = false;
-            for(int i = 0; i < AgentsCount; ++i)
+            for(int i = 0; i < MyAgentsCount; ++i)
             {
                 if (Me[i].X >= width || Me[i].Y >= height)
                 {
@@ -25,17 +25,17 @@ namespace AngryBee.Rule
                     result[i] = MovableResultType.EnemyIsHere;
                     return result;
                 }
-                for(int j = 0; j < AgentsCount; ++j)
+                for(int j = 0; j < MyAgentsCount; ++j)
                     notMovable |= Me[i] == Me[j];
             }
             if(notMovable)
             {
-                for (int i = 0; i < AgentsCount; ++i)
+                for (int i = 0; i < MyAgentsCount; ++i)
                     result[i] = MovableResultType.NotMovable;
             }
             else
             {
-                for(int i = 0; i < AgentsCount; ++i)
+                for(int i = 0; i < MyAgentsCount; ++i)
                     result[i] = EnemyField[Me[i]] ? MovableResultType.EraseNeeded : MovableResultType.Ok;
             }
             return result;

@@ -47,13 +47,13 @@ namespace AngryBee.Search
 
         public int Count { get; private set; }
 
-        public Ways(in SearchState searchState, int AgentsCount, sbyte[,] ScoreBoard)
+        public Ways(in SearchState searchState, int MyAgentsCount, int EnemyAgentsCount, sbyte[,] ScoreBoard)
         {
             uint W = (uint)ScoreBoard.GetLength(0);
             uint H = (uint)ScoreBoard.GetLength(1);
-            Data = ArrayPool<Way[]>.Shared.Rent(AgentsCount);
-            ActualCount = ArrayPool<int>.Shared.Rent(AgentsCount);
-            for (int agent = 0; agent < AgentsCount; ++agent)
+            Data = ArrayPool<Way[]>.Shared.Rent(MyAgentsCount);
+            ActualCount = ArrayPool<int>.Shared.Rent(MyAgentsCount);
+            for (int agent = 0; agent < MyAgentsCount; ++agent)
             {
                 Data[agent] = ArrayPool<Way>.Shared.Rent(WayEnumerator.Length);
                 int actualItr = 0;
@@ -64,7 +64,7 @@ namespace AngryBee.Search
                 {
                     Point next = searchState.Me[agent] + WayEnumerator[itr];
                     if (next.X >= W || next.Y >= H) goto loop_end;
-                    for (int enemy = 0; enemy < AgentsCount; ++enemy)
+                    for (int enemy = 0; enemy < EnemyAgentsCount; ++enemy)
                         if (searchState.Enemy[enemy] == next) goto loop_end;
                     Data[agent][actualItr] = new Way(WayEnumerator[itr], next) { Point = ScoreBoard[next.X, next.Y]};
                     actualItr++;
@@ -87,13 +87,13 @@ namespace AngryBee.Search
         //    get => ref data[index];
         //}
 
-        public WayEnumerator GetEnumerator(int agentsCount) => new WayEnumerator(this, agentsCount);
+        public WayEnumerator GetEnumerator(int myAgentsCount) => new WayEnumerator(this, myAgentsCount);
     }
 
     public class WayEnumerator : IEnumerator<Unsafe16Array<Way>>
     {
         public Ways Parent { get; set; }
-        public int AgentsCount { get; set; }
+        public int MyAgentsCount { get; set; }
         private ulong Iterator = 0;
         private bool isHead = true;
         public unsafe Unsafe16Array<Way> Current {
@@ -102,7 +102,7 @@ namespace AngryBee.Search
                 {
                     byte* itrs = (byte*)ll;
                     Unsafe16Array<Way> ret = new Unsafe16Array<Way>();
-                    for (int i = 0; i < AgentsCount; ++i)
+                    for (int i = 0; i < MyAgentsCount; ++i)
                         ret[i] = Parent.Data[i][itrs[i]];
                     return ret;
                 }
@@ -111,10 +111,10 @@ namespace AngryBee.Search
 
         object IEnumerator.Current => Current;
 
-        public WayEnumerator(Ways parent, int agentsCount)
+        public WayEnumerator(Ways parent, int myAgentsCount)
         {
             Parent = parent;
-            AgentsCount = agentsCount;
+            MyAgentsCount = myAgentsCount;
         }
 
         public void Dispose()
@@ -124,11 +124,11 @@ namespace AngryBee.Search
         public unsafe bool IncreaseIterator(byte * itrs)
         {
             itrs[0]++;
-            for (int i = 0; i < AgentsCount; ++i)
+            for (int i = 0; i < MyAgentsCount; ++i)
             {
                 if (itrs[i] < Parent.ActualCount[i])
                     continue;
-                if (i == AgentsCount - 1)
+                if (i == MyAgentsCount - 1)
                     return false;
                 itrs[i + 1]++;
                 itrs[i] = 0;
@@ -145,8 +145,8 @@ namespace AngryBee.Search
                     if (!IncreaseIterator(itrs)) return false;
                 isHead = false;
                 // Check weather each agents hits an another.
-                for (int a = 0; a < AgentsCount; ++a)
-                    for (int b = a + 1; b < AgentsCount; ++b)
+                for (int a = 0; a < MyAgentsCount; ++a)
+                    for (int b = a + 1; b < MyAgentsCount; ++b)
                         if (Parent.Data[a][itrs[a]].Locate == Parent.Data[b][itrs[b]].Locate) goto err;
                 return true;
             }

@@ -42,9 +42,9 @@ namespace AngryBee.Search
 
         private int Back = 0;
 
-        public SmallWays(int AgentsCount)
+        public SmallWays(int MyAgentsCount)
         {
-            data = ArrayPool<SmallWay>.Shared.Rent((1 << (AgentsCount * 3)));
+            data = ArrayPool<SmallWay>.Shared.Rent((1 << (MyAgentsCount * 3)));
         }
 
         public void Add(in SmallWay w)
