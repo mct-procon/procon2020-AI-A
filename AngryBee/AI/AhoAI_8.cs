@@ -55,13 +55,15 @@ namespace AngryBee.AI
             //PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
             PointEvaluator.Base evaluator = PointEvaluator_Normal;
             SearchState state = new SearchState(MyBoard, EnemyBoard, MyAgents, EnemyAgents);
+            var mySurroundBoard = MySurroundedBoard;
+            var enemySurroundBoard = EnemySurroundedBoard;
 
             Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
             
             for (int agent = 0; agent < AgentsCount; ++agent)
             {
                 Unsafe16Array<Way> nextways = dp[0].Ways;
-                NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent);
+                NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent, mySurroundBoard, enemySurroundBoard);
             }
 
             if (CancellationToken.IsCancellationRequested == false)
@@ -72,7 +74,7 @@ namespace AngryBee.AI
 
         //Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
         //NegaMaxではない
-        private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe16Array<Way> nextways, int nowAgent)
+        private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe16Array<Way> nextways, int nowAgent, ColoredBoardNormalSmaller mySurroundBoard, ColoredBoardNormalSmaller enemySurroundBoard)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             if (deepness == 0)
@@ -104,7 +106,7 @@ namespace AngryBee.AI
                 SearchState backup = state;
                 state = state.GetNextState(AgentsCount, newways);
 
-                int res = NegaMax(deepness - 1, state, alpha, count + 1, evaluator, ngMove, nextways, nowAgent);
+                int res = NegaMax(deepness - 1, state, alpha, count + 1, evaluator, ngMove, nextways, nowAgent, mySurroundBoard, enemySurroundBoard);
                 if (alpha < res)
                 {
                     nextways[nowAgent] = way;

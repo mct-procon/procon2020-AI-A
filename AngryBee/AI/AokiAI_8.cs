@@ -60,6 +60,8 @@ namespace AngryBee.AI
             PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
             SearchState state = new SearchState(MyBoard, EnemyBoard, MyAgents, EnemyAgents);
             int score = PointEvaluator_Normal.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - PointEvaluator_Normal.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me);
+            var mySurroundBoard = MySurroundedBoard;
+            var enemySurroundBoard = EnemySurroundedBoard;
 
             Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
             //if (!(lastTurnDecided is null)) Log("IsAgent1Moved = {0}, IsAgent2Moved = {1}, lastTurnDecided = {2}", IsAgent1Moved, IsAgent2Moved, lastTurnDecided);
@@ -85,7 +87,7 @@ namespace AngryBee.AI
                 for (int agent = 0; agent < AgentsCount; ++agent)
                 {
                     Unsafe16Array<Way> nextways = dp1[0].Ways;
-                    NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent);
+                    NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent, mySurroundBoard, enemySurroundBoard);
                 }
                 Decision best1 = new Decision((byte)AgentsCount, Unsafe16Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
                 resultList.Add(best1);
@@ -101,7 +103,7 @@ namespace AngryBee.AI
                     for (int agent = 0; agent < AgentsCount; ++agent)
                     {
                         Unsafe16Array<Way> nextways = dp2[0].Ways;
-                        NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, best1, nextways, agent);
+                        NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, best1, nextways, agent, mySurroundBoard, enemySurroundBoard);
                     }
                     Decision best2 = new Decision((byte)AgentsCount, Unsafe16Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
                     resultList.Add(best2);
@@ -133,7 +135,7 @@ namespace AngryBee.AI
 
         //Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
         //NegaMaxではない
-        private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe16Array<Way> nextways, int nowAgent)
+        private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe16Array<Way> nextways, int nowAgent, ColoredBoardNormalSmaller mySurroundBoard, ColoredBoardNormalSmaller enemySurroundBoard)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             if (deepness == 0)
@@ -184,7 +186,7 @@ namespace AngryBee.AI
                 SearchState backup = state;
                 state = state.GetNextState(AgentsCount, newways);
                 
-                int res = NegaMax(deepness - 1, state, alpha, count + 1, evaluator, ngMove, nextways, nowAgent);
+                int res = NegaMax(deepness - 1, state, alpha, count + 1, evaluator, ngMove, nextways, nowAgent, mySurroundBoard, enemySurroundBoard);
                 if (alpha < res)
                 {
                     nextways[nowAgent] = way;
