@@ -59,9 +59,9 @@ namespace AngryBee.AI
             int maxDepth = (TurnCount - CurrentTurn) + 1;
             PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
             SearchState state = new SearchState(MyBoard, EnemyBoard, MyAgents, EnemyAgents);
-            int score = PointEvaluator_Normal.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - PointEvaluator_Normal.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me);
             var mySurroundBoard = MySurroundedBoard;
             var enemySurroundBoard = EnemySurroundedBoard;
+            int score = PointEvaluator_Normal.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy, mySurroundBoard, enemySurroundBoard) - PointEvaluator_Normal.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me, mySurroundBoard, enemySurroundBoard);
 
             Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
             //if (!(lastTurnDecided is null)) Log("IsAgent1Moved = {0}, IsAgent2Moved = {1}, lastTurnDecided = {2}", IsAgent1Moved, IsAgent2Moved, lastTurnDecided);
@@ -140,7 +140,7 @@ namespace AngryBee.AI
             var sw = System.Diagnostics.Stopwatch.StartNew();
             if (deepness == 0)
             {
-                return evaluator.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me);
+                return evaluator.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy, mySurroundBoard, enemySurroundBoard) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me, mySurroundBoard, enemySurroundBoard);
             }
 
             Ways ways = state.MakeMoves(AgentsCount, ScoreBoard);

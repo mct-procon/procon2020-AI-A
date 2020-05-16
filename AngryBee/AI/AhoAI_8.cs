@@ -79,7 +79,7 @@ namespace AngryBee.AI
             var sw = System.Diagnostics.Stopwatch.StartNew();
             if (deepness == 0)
             {
-                return evaluator.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me);
+                return evaluator.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy, mySurroundBoard, enemySurroundBoard) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me, mySurroundBoard, enemySurroundBoard);
             }
 
             Ways ways = state.MakeMoves(AgentsCount, ScoreBoard);

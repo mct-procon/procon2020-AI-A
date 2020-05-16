@@ -21,7 +21,7 @@ namespace AngryBee.PointEvaluator
                 this.y = y;
             }
         }
-        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, int Turn, Unsafe16Array<Point> Me, Unsafe16Array<Point> Enemy)
+        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, int Turn, Unsafe16Array<Point> Me, Unsafe16Array<Point> Enemy, ColoredBoardNormalSmaller mySurroundBoard, ColoredBoardNormalSmaller enemySurroundBoard)
         {
             uint width = (uint)ScoreBoard.GetLength(0);
             uint height = (uint)ScoreBoard.GetLength(1);
