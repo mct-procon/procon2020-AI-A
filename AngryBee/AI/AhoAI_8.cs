@@ -59,7 +59,7 @@ namespace AngryBee.AI
             var enemySurroundBoard = EnemySurroundedBoard;
 
             Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
-            
+
             for (int agent = 0; agent < AgentsCount; ++agent)
             {
                 Unsafe16Array<Way> nextways = dp[0].Ways;
@@ -79,7 +79,7 @@ namespace AngryBee.AI
             var sw = System.Diagnostics.Stopwatch.StartNew();
             if (deepness == 0)
             {
-                return evaluator.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy, mySurroundBoard, enemySurroundBoard) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me, mySurroundBoard, enemySurroundBoard);
+                return evaluator.Calculate(ScoreBoard, state.MeBoard, state.EnemyBoard, 0, state.Me, state.Enemy, mySurroundBoard, enemySurroundBoard) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, state.MeBoard, 0, state.Enemy, state.Me, mySurroundBoard, enemySurroundBoard);
             }
 
             Ways ways = state.MakeMoves(AgentsCount, ScoreBoard);
