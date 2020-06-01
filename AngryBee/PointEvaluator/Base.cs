@@ -8,6 +8,6 @@ namespace AngryBee.PointEvaluator
 {
     public abstract class Base
     {
-        public abstract int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, ColoredBoardNormalSmaller enemyPainted, int Turn, Unsafe16Array<Point> Me, Unsafe16Array<Point> Enemy, ColoredBoardNormalSmaller mySurroundBoard, ColoredBoardNormalSmaller enemySurroundBoard);
+        public abstract int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, in ColoredBoardNormalSmaller enemyPainted, int Turn, Unsafe16Array<Point> Me, Unsafe16Array<Point> Enemy, ColoredBoardNormalSmaller mySurroundBoard, ColoredBoardNormalSmaller enemySurroundBoard);
     }
 }

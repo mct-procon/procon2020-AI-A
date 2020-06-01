@@ -20,7 +20,7 @@ namespace AngryBee.PointEvaluator
                 this.y = y;
             }
         }
-        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, int Turn, Unsafe16Array<Point> Me, Unsafe16Array<Point> Enemy, ColoredBoardNormalSmaller mySurroundBoard, ColoredBoardNormalSmaller enemySurroundBoard)
+        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, in ColoredBoardNormalSmaller enemyPainted, int Turn, Unsafe16Array<Point> Me, Unsafe16Array<Point> Enemy, ColoredBoardNormalSmaller mySurroundBoard, ColoredBoardNormalSmaller enemySurroundBoard)
         {
             byte width = (byte)ScoreBoard.GetLength(0);
             byte height = (byte)ScoreBoard.GetLength(1);
@@ -36,7 +36,7 @@ namespace AngryBee.PointEvaluator
                     }
                 }
 
-            ScoreEvaluation.BadSpaceFill(ref checker, width, height);
+            ScoreEvaluation.BadSpaceFill(ref checker, enemyPainted, width, height);
 
             for (uint x = 0; x < width; ++x)
                 for (uint y = 0; y < height; ++y)
