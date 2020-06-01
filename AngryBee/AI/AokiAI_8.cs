@@ -94,7 +94,7 @@ namespace AngryBee.AI
                 //競合手.Agent1 == 最善手.Agent1 && 競合手.Agent2 == 最善手.Agent2になった場合、競合手をngMoveとして探索をおこない、最善手を探す
                 for (int i = 0; i < AgentsCount; ++i)
                 {
-                    if (IsAgentsMoved[i] || !lastTurnDecided.Agents[i].Equals(best1.Agents[i]))
+                    if (IsAgentsMoved[i] || (!(lastTurnDecided is null) && !lastTurnDecided.Agents[i].Equals(best1.Agents[i])))
                     {
                         break;
                     }
