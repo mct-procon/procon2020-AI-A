@@ -127,9 +127,9 @@ namespace AngryBee.AI
             }
         }
 
-        protected override void EndSolve(object sender, EventArgs e)
+        protected override void EndSolve()
         {
-            base.EndSolve(sender, e);
+            base.EndSolve();
             lastTurnDecided = SolverResultList[0];  //0番目の手を指したとする。（次善手を人間が選んで競合した～ということがなければOK）
         }
 
