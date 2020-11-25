@@ -8,29 +8,15 @@ using System.Text;
 
 namespace AngryBee.Search
 {
-    public class ObjectPool<T> where T : class
-    {
-        ConcurrentBag<T> bag = new ConcurrentBag<T>();
-
-        public void Return(T obj)
-        {
-            bag.Add(obj);
-        }
-        public bool Get(out T obj)
-        {
-            return bag.TryTake(out obj);
-        }
-    }
-
     public struct Way : IComparable
     {
         public sbyte Point { get; set; }
         public VelocityPoint Direction { get; set; }
         public Point Locate { get; set; }
         
-        public Way(in VelocityPoint direction, in Point locate)
+        public Way(in VelocityPoint direction, in Point locate, sbyte point)
         {
-            Point = 0;
+            Point = point;
             Direction = direction;
             Locate = locate;
         }
@@ -38,7 +24,7 @@ namespace AngryBee.Search
         public int CompareTo(object obj) => ((Way)obj).Point - this.Point;
     }
 
-    public unsafe class Ways
+    public class Ways
     {
         // This is fastest.
         public static ReadOnlySpan<VelocityPoint> WayEnumerator => new VelocityPoint[] { new VelocityPoint(0, -1), new VelocityPoint(1, -1), new VelocityPoint(1, 0), new VelocityPoint(1, 1), new VelocityPoint(0, 1), new VelocityPoint(-1, 1), new VelocityPoint(-1, 0), new VelocityPoint(-1, -1) };
@@ -63,10 +49,12 @@ namespace AngryBee.Search
                 if(itr < WayEnumerator.Length)
                 {
                     Point next = searchState.Me[agent] + WayEnumerator[itr];
-                    if (next.X >= W || next.Y >= H) goto loop_end;
+                    // Is Agent is out of bounds?
+                    if (next.X >= W || next.Y >= H) goto loop_end; // continue;
+                    // Is hit each side agents?
                     for (int enemy = 0; enemy < AgentsCount; ++enemy)
-                        if (searchState.Enemy[enemy] == next) goto loop_end;
-                    Data[agent][actualItr] = new Way(WayEnumerator[itr], next) { Point = ScoreBoard[next.X, next.Y]};
+                        if (searchState.Enemy[enemy] == next) goto loop_end; // continue; on outer for loop.
+                    Data[agent][actualItr] = new Way(WayEnumerator[itr], next, ScoreBoard[next.X, next.Y]);
                     actualItr++;
                     loop_end:
                     ++itr;
@@ -80,7 +68,12 @@ namespace AngryBee.Search
         public void End()
         {
             if (Data != null)
+            {
+                for (int i = 0; i < Data.Length; ++i)
+                    if (Data[i] != null)
+                        ArrayPool<Way>.Shared.Return(Data[i]);
                 ArrayPool<Way[]>.Shared.Return(Data);
+            }
         }
 
         //public ref Way this[int index] {
@@ -138,18 +131,21 @@ namespace AngryBee.Search
 
         public unsafe bool MoveNext()
         {
-            fixed (ulong* ll = &Iterator) {
-                byte* itrs = (byte*)ll;
-            err:
-                if (!isHead)
-                    if (!IncreaseIterator(itrs)) return false;
-                isHead = false;
-                // Check weather each agents hits an another.
-                for (int a = 0; a < AgentsCount; ++a)
-                    for (int b = a + 1; b < AgentsCount; ++b)
-                        if (Parent.Data[a][itrs[a]].Locate == Parent.Data[b][itrs[b]].Locate) goto err;
-                return true;
+            ulong ll = Iterator;
+            byte* itrs = (byte*)&ll;
+        err:
+            if (!isHead)
+            {
+                bool ok = IncreaseIterator(itrs);
+                Iterator = ll;
+                if (!ok) return false;
             }
+            isHead = false;
+            // Check weather each agents hits an another.
+            for (int a = 0; a < AgentsCount; ++a)
+                for (int b = a + 1; b < AgentsCount; ++b)
+                    if (Parent.Data[a][itrs[a]].Locate == Parent.Data[b][itrs[b]].Locate) goto err;
+            return true;
         }
 
         public void Reset()

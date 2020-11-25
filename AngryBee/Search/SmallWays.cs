@@ -8,20 +8,6 @@ using System.Text;
 
 namespace AngryBee.Search
 {
-    public class SmallObjectPool<T> where T : class
-    {
-        ConcurrentBag<T> bag = new ConcurrentBag<T>();
-
-        public void Return(T obj)
-        {
-            bag.Add(obj);
-        }
-        public bool Get(out T obj)
-        {
-            return bag.TryTake(out obj);
-        }
-    }
-
     public struct SmallWay : IComparable
     {
         public int Point { get; set; }
