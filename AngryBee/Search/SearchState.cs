@@ -13,15 +13,19 @@ namespace AngryBee.Search
 		public ColoredBoardNormalSmaller EnemyBoard;
 		public Unsafe16Array<Point> Me;
 		public Unsafe16Array<Point> Enemy;
+        public ColoredBoardNormalSmaller MeSurroundBoard;
+        public ColoredBoardNormalSmaller EnemySurroundBoard;
 
         private SearchState() { }
 
-        public SearchState(in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Unsafe16Array<Point> Me, in Unsafe16Array<Point> Enemy)
+        public SearchState(in ColoredBoardNormalSmaller MeBoard, in ColoredBoardNormalSmaller EnemyBoard, in Unsafe16Array<Point> Me, in Unsafe16Array<Point> Enemy, in ColoredBoardNormalSmaller MeSurroundBoard, in ColoredBoardNormalSmaller EnemySurroundBoard)
 		{
 			this.MeBoard = MeBoard;
 			this.EnemyBoard = EnemyBoard;
 			this.Me = Me;
 			this.Enemy = Enemy;
+            this.MeSurroundBoard = MeSurroundBoard;
+            this.EnemySurroundBoard = EnemySurroundBoard;
         }
 
         //全ての指示可能な方向を求めて, (way1[i], way2[i])に入れる。(Meが動くとする)
@@ -46,6 +50,8 @@ namespace AngryBee.Search
                     ss.Me[i] = l;
                 }
             }
+            //TODO: 囲まれ判定の呼び出し ss.MeSurroundBoard = ;
+            //TODO: 囲まれ判定の呼び出し ss.EnemySurroundBoard = ;
             return ss;
         }
         public SearchState ChangeTurn()
@@ -55,6 +61,8 @@ namespace AngryBee.Search
             ss.EnemyBoard = this.MeBoard;
             ss.Me = this.Enemy;
             ss.Enemy = this.Me;
+            ss.MeSurroundBoard = this.EnemySurroundBoard;
+            ss.EnemySurroundBoard = this.MeSurroundBoard;
 
             return ss;
         }
