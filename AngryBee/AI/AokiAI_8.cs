@@ -34,6 +34,8 @@ namespace AngryBee.AI
         private Decision lastTurnDecided = null;		//1ターン前に「実際に」打った手（競合していた場合, 競合手==lastTurnDecidedとなる。競合していない場合は, この変数は探索に使用されない）
         public int StartDepth { get; set; } = 1;
 
+        private Unsafe16Array<AgentState> agentStateAry = new Unsafe16Array<AgentState>();
+
         public AokiAI_8(int startDepth = 0)
         {
             for (int i = 0; i < 50; ++i)
@@ -42,11 +44,56 @@ namespace AngryBee.AI
                 dp2[i] = new DP();
             }
             StartDepth = startDepth;
+            for (int i = 0; i < 16; ++i)
+                agentStateAry[i] = AgentState.Move;
         }
 
+        Unsafe16Array<Point> SearchFirstPlace()
+        {
+            int cur = 0;
+            for (int i = 0; i < AgentsCount; ++i)
+                if (MyAgentsState[i] == AgentState.NonPlaced)
+                {
+                    cur = i;
+                    break;
+                }
+
+            if (MyAgentsState[cur] != AgentState.NonPlaced) return MyAgents;
+            Random rand = new Random();
+            List<Point> recommends = new List<Point>();
+            Unsafe16Array<Point> newMyAgents = MyAgents;
+            for (int x = 0; x < ScoreBoard.GetLength(0); ++x)
+                for (int y = 0; y < ScoreBoard.GetLength(1); ++y)
+                    if (ScoreBoard[x, y] >= 10)
+                        recommends.Add(new Point((byte)x, (byte)y));
+
+            foreach (var p in recommends.OrderBy(i => rand.Next()))
+            {
+                bool isSkip = false;
+                for (int i = 0; i < AgentsCount; ++i)
+                    if ((MyAgentsState[i] != AgentState.NonPlaced && MyAgents[i] == p) ||
+                        (EnemyAgentsState[i] != AgentState.NonPlaced && EnemyAgents[i] == p))
+                    {
+                        isSkip = true;
+                        break;
+                    }
+                if (isSkip) continue;
+
+                newMyAgents[cur] = p;
+                for (int i = cur + 1; i < AgentsCount; ++i)
+                    if (MyAgentsState[i] == AgentState.NonPlaced)
+                    {
+                        cur = i;
+                        break;
+                    }
+                if (cur == AgentsCount) break;
+            }
+            return newMyAgents;
+        }
 
         protected override void Solve()
         {
+            var myAgents = SearchFirstPlace();
             for (int i = 0; i < 50; ++i)
             {
                 dp1[i].Score = int.MinValue;
@@ -58,7 +105,7 @@ namespace AngryBee.AI
             int deepness = StartDepth;
             int maxDepth = (TurnCount - CurrentTurn) + 1;
             PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
-            SearchState state = new SearchState(MyBoard, EnemyBoard, MyAgents, EnemyAgents, MySurroundedBoard, EnemySurroundedBoard);
+            SearchState state = new SearchState(MyBoard, EnemyBoard, myAgents, EnemyAgents, MySurroundedBoard, EnemySurroundedBoard);
             int score = PointEvaluator_Normal.Calculate(ScoreBoard, state.MeBoard, state.EnemyBoard, 0, state.Me, state.Enemy, state.MeSurroundBoard, state.EnemySurroundBoard) - PointEvaluator_Normal.Calculate(ScoreBoard, state.EnemyBoard, state.MeBoard, 0, state.Enemy, state.Me, state.MeSurroundBoard, state.EnemySurroundBoard);
 
             Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
@@ -84,10 +131,14 @@ namespace AngryBee.AI
                 //普通にNegaMaxをして、最善手を探す
                 for (int agent = 0; agent < AgentsCount; ++agent)
                 {
+                    if (MyAgentsState[agent] == AgentState.NonPlaced) continue;
                     Unsafe16Array<Way> nextways = dp1[0].Ways;
                     NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent);
                 }
-                Decision best1 = new Decision((byte)AgentsCount, Unsafe16Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                var res = Unsafe16Array.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Locate).ToArray());
+                for (int agent = 0; agent < AgentsCount; ++agent)
+                    if (MyAgentsState[agent] == AgentState.NonPlaced) res[agent] = myAgents[agent];
+                Decision best1 = new Decision((byte)AgentsCount, res, agentStateAry);
                 resultList.Add(best1);
                 //競合手.Agent1 == 最善手.Agent1 && 競合手.Agent2 == 最善手.Agent2になった場合、競合手をngMoveとして探索をおこない、最善手を探す
                 for (int i = 0; i < AgentsCount; ++i)
@@ -100,10 +151,14 @@ namespace AngryBee.AI
 
                     for (int agent = 0; agent < AgentsCount; ++agent)
                     {
+                        if (MyAgentsState[agent] == AgentState.NonPlaced) continue;
                         Unsafe16Array<Way> nextways = dp2[0].Ways;
                         NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, best1, nextways, agent);
                     }
-                    Decision best2 = new Decision((byte)AgentsCount, Unsafe16Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                    res = Unsafe16Array.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Locate).ToArray());
+                    for (int agent = 0; agent < AgentsCount; ++agent)
+                        if (MyAgentsState[agent] == AgentState.NonPlaced) res[agent] = myAgents[agent];
+                    Decision best2 = new Decision((byte)AgentsCount, res, agentStateAry);
                     resultList.Add(best2);
                 }
 
@@ -128,6 +183,7 @@ namespace AngryBee.AI
         protected override void EndSolve()
         {
             base.EndSolve();
+            if (SolverResultList.Count == 0) return;
             lastTurnDecided = SolverResultList[0];  //0番目の手を指したとする。（次善手を人間が選んで競合した～ということがなければOK）
         }
 
@@ -135,7 +191,6 @@ namespace AngryBee.AI
         //NegaMaxではない
         private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe16Array<Way> nextways, int nowAgent)
         {
-            //var sw = System.Diagnostics.Stopwatch.StartNew();
             if (deepness == 0)
             {
                 return evaluator.Calculate(ScoreBoard, state.MeBoard, state.EnemyBoard, 0, state.Me, state.Enemy, state.MeSurroundBoard, state.EnemySurroundBoard) - evaluator.Calculate(ScoreBoard, state.MeBoard, state.EnemyBoard, 0, state.Enemy, state.Me, state.EnemySurroundBoard, state.MeSurroundBoard);
@@ -196,7 +251,6 @@ namespace AngryBee.AI
                 state = backup;
             }
 
-            //sw.Stop();
             //Log("NODES : {0} nodes, elasped {1} ", i, sw.Elapsed);
             ways.End();
             return alpha;

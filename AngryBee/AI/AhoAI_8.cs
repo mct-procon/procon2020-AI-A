@@ -31,6 +31,50 @@ namespace AngryBee.AI
         }
         private DP[] dp = new DP[50];
         public int StartDepth { get; set; } = 1;
+        private Unsafe16Array<AgentState> agentStateAry = new Unsafe16Array<AgentState>();
+
+        Unsafe16Array<Point> SearchFirstPlace()
+        {
+            int cur = 0;
+            for (int i = 0; i < AgentsCount; ++i)
+                if (MyAgentsState[i] == AgentState.NonPlaced)
+                {
+                    cur = i;
+                    break;
+                }
+
+            if (MyAgentsState[cur] != AgentState.NonPlaced) return MyAgents;
+            Random rand = new Random();
+            List<Point> recommends = new List<Point>();
+            Unsafe16Array<Point> newMyAgents = MyAgents;
+            for (int x = 0; x < ScoreBoard.GetLength(0); ++x)
+                for (int y = 0; y < ScoreBoard.GetLength(1); ++y)
+                    if (ScoreBoard[x, y] >= 10)
+                        recommends.Add(new Point((byte)x, (byte)y));
+
+            foreach (var p in recommends.OrderBy(i => rand.Next()))
+            {
+                bool isSkip = false;
+                for (int i = 0; i < AgentsCount; ++i)
+                    if ((MyAgentsState[i] != AgentState.NonPlaced && MyAgents[i] == p) ||
+                        (EnemyAgentsState[i] != AgentState.NonPlaced && EnemyAgents[i] == p))
+                    {
+                        isSkip = true;
+                        break;
+                    }
+                if (isSkip) continue;
+
+                newMyAgents[cur] = p;
+                for (int i = cur + 1; i < AgentsCount; ++i)
+                    if (MyAgentsState[i] == AgentState.NonPlaced)
+                    {
+                        cur = i;
+                        break;
+                    }
+                if (cur == AgentsCount) break;
+            }
+            return newMyAgents;
+        }
 
         public AhoAI_8(int startDepth = 1)
         {
@@ -39,11 +83,14 @@ namespace AngryBee.AI
                 dp[i] = new DP();
             }
             StartDepth = startDepth;
+            for (int i = 0; i < 16; ++i)
+                agentStateAry[i] = AgentState.Move;
         }
 
 
         protected override void Solve()
         {
+            var myAgents = SearchFirstPlace();
             for (int i = 0; i < 50; ++i)
             {
                 dp[i].Score = int.MinValue;
@@ -54,19 +101,23 @@ namespace AngryBee.AI
             int maxDepth = (TurnCount - CurrentTurn) + 1;
             //PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
             PointEvaluator.Base evaluator = PointEvaluator_Normal;
-            SearchState state = new SearchState(MyBoard, EnemyBoard, MyAgents, EnemyAgents, MySurroundedBoard, EnemySurroundedBoard);
+            SearchState state = new SearchState(MyBoard, EnemyBoard, myAgents, EnemyAgents, MySurroundedBoard, EnemySurroundedBoard);
 
             Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
 
             for (int agent = 0; agent < AgentsCount; ++agent)
             {
+                if (MyAgentsState[agent] == AgentState.NonPlaced) continue;
                 Unsafe16Array<Way> nextways = dp[0].Ways;
                 NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent);
             }
 
             if (CancellationToken.IsCancellationRequested == false)
             {
-                SolverResult = new Decision((byte)AgentsCount, Unsafe16Array<VelocityPoint>.Create(dp[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+                var res = Unsafe16Array.Create(dp[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Locate).ToArray());
+                for (int agent = 0; agent < AgentsCount; ++agent)
+                    if (MyAgentsState[agent] == AgentState.NonPlaced) res[agent] = myAgents[agent];
+                SolverResultList.Add(new Decision((byte)AgentsCount, res, agentStateAry));
             }
         }
 

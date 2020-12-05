@@ -32,7 +32,7 @@ namespace AngryBee
             {
                 AI = new AI.SingleAgentAI(1);
             }
-            
+
             int portId;
 
             Console.CancelKeyPress +=
