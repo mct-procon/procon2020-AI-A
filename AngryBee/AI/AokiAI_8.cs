@@ -233,12 +233,9 @@ namespace AngryBee.AI
                     if (j != AgentsCount) continue;
                 }
 
-                Unsafe16Array<Way> newways = new Unsafe16Array<Way>();
-                newways[nowAgent] = way;
-                SearchState backup = state;
-                state = state.GetNextState(AgentsCount, newways);
+                SearchState newState = state.GetNextStateSingle(nowAgent, way);
                 
-                int res = NegaMax(deepness - 1, state, alpha, count + 1, evaluator, ngMove, nextways, nowAgent);
+                int res = NegaMax(deepness - 1, newState, alpha, count + 1, evaluator, ngMove, nextways, nowAgent);
                 if (alpha < res)
                 {
                     nextways[nowAgent] = way;
@@ -246,8 +243,6 @@ namespace AngryBee.AI
                     if (ngMove is null) { dp1[count].UpdateScore(alpha, nextways); }
                     else { dp2[count].UpdateScore(alpha, nextways); }
                 }
-
-                state = backup;
             }
 
             //Log("NODES : {0} nodes, elasped {1} ", i, sw.Elapsed);

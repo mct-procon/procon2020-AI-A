@@ -53,6 +53,27 @@ namespace AngryBee.Search
             //TODO: 囲まれ判定の呼び出し ss.EnemySurroundBoard = ;
             return ss;
         }
+
+        public SearchState GetNextStateSingle(int agentIndex, Way way)
+        {
+            var ss = new SearchState();
+            ss.MeBoard = this.MeBoard;
+            ss.EnemyBoard = this.EnemyBoard;
+            ss.Me = this.Me;
+            ss.Enemy = this.Enemy;
+            var l = way.Locate;
+            if (ss.EnemyBoard[l]) // タイル除去
+                ss.EnemyBoard[l] = false;
+            else
+            {
+                ss.MeBoard[l] = true;
+                ss.Me[agentIndex] = l;
+            }
+            //TODO: 囲まれ判定の呼び出し ss.MeSurroundBoard = ;
+            //TODO: 囲まれ判定の呼び出し ss.EnemySurroundBoard = ;
+            return ss;
+        }
+
         public SearchState ChangeTurn()
         {
             var ss = new SearchState();
