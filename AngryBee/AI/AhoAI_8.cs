@@ -131,13 +131,12 @@ namespace AngryBee.AI
                 return evaluator.Calculate(ScoreBoard, state.MeBoard, state.EnemyBoard, 0, state.Me, state.Enemy, state.MeSurroundBoard, state.EnemySurroundBoard) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, state.MeBoard, 0, state.Enemy, state.Me, state.EnemySurroundBoard, state.MeSurroundBoard);
             }
 
-            Ways ways = state.MakeMoves(AgentsCount, ScoreBoard);
+            MultiAgentWays ways = state.MakeMoves(AgentsCount, ScoreBoard);
 
             int i = 0;
             foreach (var way in ways.Data[nowAgent])
             {
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
-                if (way.Direction == new VelocityPoint()) continue;
                 i++;
 
                 int j = 0;

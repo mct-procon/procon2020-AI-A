@@ -8,23 +8,7 @@ using System.Text;
 
 namespace AngryBee.Search
 {
-    public struct Way : IComparable
-    {
-        public sbyte Point { get; set; }
-        public VelocityPoint Direction { get; set; }
-        public Point Locate { get; set; }
-        
-        public Way(in VelocityPoint direction, in Point locate, sbyte point)
-        {
-            Point = point;
-            Direction = direction;
-            Locate = locate;
-        }
-
-        public int CompareTo(object obj) => ((Way)obj).Point - this.Point;
-    }
-
-    public class Ways
+    public class MultiAgentWays
     {
         // This is fastest.
         public static ReadOnlySpan<VelocityPoint> WayEnumerator => new VelocityPoint[] { new VelocityPoint(0, -1), new VelocityPoint(1, -1), new VelocityPoint(1, 0), new VelocityPoint(1, 1), new VelocityPoint(0, 1), new VelocityPoint(-1, 1), new VelocityPoint(-1, 0), new VelocityPoint(-1, -1) };
@@ -33,7 +17,7 @@ namespace AngryBee.Search
 
         public int Count { get; private set; }
 
-        public Ways(in SearchState searchState, int AgentsCount, sbyte[,] ScoreBoard)
+        public MultiAgentWays(in SearchState searchState, int AgentsCount, sbyte[,] ScoreBoard)
         {
             uint W = (uint)ScoreBoard.GetLength(0);
             uint H = (uint)ScoreBoard.GetLength(1);
@@ -54,7 +38,7 @@ namespace AngryBee.Search
                     // Is hit each side agents?
                     for (int enemy = 0; enemy < AgentsCount; ++enemy)
                         if (searchState.Enemy[enemy] == next) goto loop_end; // continue; on outer for loop.
-                    Data[agent][actualItr] = new Way(WayEnumerator[itr], next, ScoreBoard[next.X, next.Y]);
+                    Data[agent][actualItr] = new Way(next, ScoreBoard[next.X, next.Y]);
                     actualItr++;
                     loop_end:
                     ++itr;
@@ -80,12 +64,12 @@ namespace AngryBee.Search
         //    get => ref data[index];
         //}
 
-        public WayEnumerator GetEnumerator(int agentsCount) => new WayEnumerator(this, agentsCount);
+        public MultiAgentWaysEnumerator GetEnumerator(int agentsCount) => new MultiAgentWaysEnumerator(this, agentsCount);
     }
 
-    public class WayEnumerator : IEnumerator<Unsafe16Array<Way>>
+    public class MultiAgentWaysEnumerator : IEnumerator<Unsafe16Array<Way>>
     {
-        public Ways Parent { get; set; }
+        public MultiAgentWays Parent { get; set; }
         public int AgentsCount { get; set; }
         private ulong Iterator = 0;
         private bool isHead = true;
@@ -104,7 +88,7 @@ namespace AngryBee.Search
 
         object IEnumerator.Current => Current;
 
-        public WayEnumerator(Ways parent, int agentsCount)
+        public MultiAgentWaysEnumerator(MultiAgentWays parent, int agentsCount)
         {
             Parent = parent;
             AgentsCount = agentsCount;
@@ -154,6 +138,6 @@ namespace AngryBee.Search
             Iterator = 0;
         }
 
-        public WayEnumerator GetEnumerator() => this;
+        public MultiAgentWaysEnumerator GetEnumerator() => this;
     }
 }

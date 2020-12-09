@@ -29,7 +29,7 @@ namespace AngryBee.Search
         }
 
         //全ての指示可能な方向を求めて, (way1[i], way2[i])に入れる。(Meが動くとする)
-        public Ways MakeMoves(int AgentsCount, sbyte[,] ScoreBoard) => new Ways(this, AgentsCount, ScoreBoard);
+        public MultiAgentWays MakeMoves(int AgentsCount, sbyte[,] ScoreBoard) => new MultiAgentWays(this, AgentsCount, ScoreBoard);
 
         public SearchState GetNextState(int AgentsCount, Unsafe16Array<Way> ways)
         {
@@ -40,7 +40,6 @@ namespace AngryBee.Search
             ss.Enemy = this.Enemy;
             for (int i = 0; i < AgentsCount; ++i)
             {
-                if (ways[i].Direction == new VelocityPoint()) continue;
                 var l = ways[i].Locate;
                 if (ss.EnemyBoard[l]) // タイル除去
                     ss.EnemyBoard[l] = false;
