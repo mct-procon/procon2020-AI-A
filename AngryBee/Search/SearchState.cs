@@ -30,6 +30,7 @@ namespace AngryBee.Search
 
         //全ての指示可能な方向を求めて, (way1[i], way2[i])に入れる。(Meが動くとする)
         public MultiAgentWays MakeMoves(int AgentsCount, sbyte[,] ScoreBoard) => new MultiAgentWays(this, AgentsCount, ScoreBoard);
+        public SingleAgentWays MakeMovesSingle(int agentsCount, int agentIndex, sbyte[,] scoreBoard) => new SingleAgentWays(this, agentsCount, agentIndex, scoreBoard);
 
         public SearchState GetNextState(int AgentsCount, Unsafe16Array<Way> ways)
         {

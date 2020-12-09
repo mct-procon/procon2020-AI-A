@@ -196,10 +196,10 @@ namespace AngryBee.AI
                 return evaluator.Calculate(ScoreBoard, state.MeBoard, state.EnemyBoard, 0, state.Me, state.Enemy, state.MeSurroundBoard, state.EnemySurroundBoard) - evaluator.Calculate(ScoreBoard, state.MeBoard, state.EnemyBoard, 0, state.Enemy, state.Me, state.EnemySurroundBoard, state.MeSurroundBoard);
             }
 
-            MultiAgentWays ways = state.MakeMoves(AgentsCount, ScoreBoard);
+            SingleAgentWays ways = state.MakeMovesSingle(AgentsCount, nowAgent, ScoreBoard);
 
             int i = 0;
-            foreach (var way in ways.Data[nowAgent])
+            foreach (var way in ways.Data)
             {
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
                 i++;
