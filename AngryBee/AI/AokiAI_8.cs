@@ -199,7 +199,7 @@ namespace AngryBee.AI
             SingleAgentWays ways = state.MakeMovesSingle(AgentsCount, nowAgent, ScoreBoard);
 
             int i = 0;
-            foreach (var way in ways.Data)
+            foreach (var way in ways)
             {
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
                 i++;

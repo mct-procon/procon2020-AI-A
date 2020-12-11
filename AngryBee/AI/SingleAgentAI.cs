@@ -1,12 +1,10 @@
-﻿using AngryBee.Boards;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using MCTProcon31Protocol.Methods;
 using MCTProcon31Protocol;
 using AngryBee.Search;
 using System.Linq;
-
 
 namespace AngryBee.AI
 {
@@ -15,22 +13,8 @@ namespace AngryBee.AI
         PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
 
-        private class DP
-        {
-            public int Score { get; set; } = -10000;
-            public Unsafe16Array<Way> Ways { get; set; }
-
-            public void UpdateScore(int score, Unsafe16Array<Way> ways)
-            {
-                if (Score < score)
-                {
-                    Ways = ways;
-                }
-            }
-
-        }
-        private DP[] dp1 = new DP[50];  //dp1[i] = 深さi時点での最善手
-        private DP[] dp2 = new DP[50];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
+        private Unsafe16Array<Way>[] dp1 = new Unsafe16Array<Way>[50];  //dp1[i] = 深さi時点での最善手
+        private Unsafe16Array<Way>[] dp2 = new Unsafe16Array<Way>[50];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
         private Decision lastTurnDecided = null;		//1ターン前に「実際に」打った手（競合していた場合, 競合手==lastTurnDecidedとなる。競合していない場合は, この変数は探索に使用されない）
         public int StartDepth { get; set; } = 1;
         private Unsafe16Array<AgentState> agentStateAry = new Unsafe16Array<AgentState>();
@@ -39,8 +23,8 @@ namespace AngryBee.AI
         {
             for (int i = 0; i < 50; ++i)
             {
-                dp1[i] = new DP();
-                dp2[i] = new DP();
+                dp1[i] = new Unsafe16Array<Way>();
+                dp2[i] = new Unsafe16Array<Way>();
             }
             StartDepth = startDepth;
             for (int i = 0; i < 16; ++i)
@@ -94,10 +78,8 @@ namespace AngryBee.AI
             var myAgents = SearchFirstPlace();
             for (int i = 0; i < 50; ++i)
             {
-                dp1[i].Score = int.MinValue;
-                dp2[i].Score = int.MinValue;
-                dp1[i].Ways = new Unsafe16Array<Way>();
-                dp2[i].Ways = new Unsafe16Array<Way>();
+                dp1[i] = new Unsafe16Array<Way>();
+                dp2[i] = new Unsafe16Array<Way>();
             }
 
             int deepness = StartDepth;
@@ -130,10 +112,10 @@ namespace AngryBee.AI
                 for (int agent = 0; agent < AgentsCount; ++agent)
                 {
                     if (MyAgentsState[agent] == AgentState.NonPlaced) continue;
-                    Unsafe16Array<Way> nextways = dp1[0].Ways;
+                    Unsafe16Array<Way> nextways = dp1[0];
                     NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent, deepness);
                 }
-                var res = Unsafe16Array.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Locate).ToArray());
+                var res = Unsafe16Array.Create(dp1[0].GetEnumerable(AgentsCount).Select(x => x.Locate).ToArray());
                 for (int agent = 0; agent < AgentsCount; ++agent)
                     if (MyAgentsState[agent] == AgentState.NonPlaced) res[agent] = myAgents[agent];
                 Decision best1 = new Decision((byte)AgentsCount, res, agentStateAry);
@@ -148,10 +130,10 @@ namespace AngryBee.AI
                     for (int agent = 0; agent < AgentsCount; ++agent)
                     {
                         if (MyAgentsState[agent] == AgentState.NonPlaced) continue;
-                        Unsafe16Array<Way> nextways = dp2[0].Ways;
+                        Unsafe16Array<Way> nextways = dp2[0];
                         NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, best1, nextways, agent, deepness);
                     }
-                    res = Unsafe16Array.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Locate).ToArray());
+                    res = Unsafe16Array.Create(dp2[0].GetEnumerable(AgentsCount).Select(x => x.Locate).ToArray());
                     for (int agent = 0; agent < AgentsCount; ++agent)
                         if (MyAgentsState[agent] == AgentState.NonPlaced) res[agent] = myAgents[agent];
                     Decision best2 = new Decision((byte)AgentsCount, res, agentStateAry);
@@ -195,7 +177,7 @@ namespace AngryBee.AI
             SingleAgentWays ways = state.MakeMovesSingle(AgentsCount, nowAgent, ScoreBoard);
 
             int i = 0;
-            foreach (var way in ways.Data)
+            foreach (var way in ways)
             {
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
                 i++;
@@ -210,9 +192,9 @@ namespace AngryBee.AI
                     int k;
                     for (k = 0; k < watch_deepness; ++k)
                     {
-                        if (ngMove is null && dp1[k].Ways[j].Locate == way.Locate)
+                        if (ngMove is null && dp1[k][j].Locate == way.Locate)
                             break;
-                        if (!(ngMove is null) && dp2[k].Ways[j].Locate == way.Locate)
+                        if (!(ngMove is null) && dp2[k][j].Locate == way.Locate)
                             break;
                     }
                     if (k != watch_deepness) break;
@@ -233,8 +215,8 @@ namespace AngryBee.AI
                 {
                     nextways[nowAgent] = way;
                     alpha = res;
-                    if (ngMove is null) { dp1[count].UpdateScore(alpha, nextways); }
-                    else { dp2[count].UpdateScore(alpha, nextways); }
+                    if (ngMove is null) { dp1[count] = nextways; }
+                    else { dp2[count] = nextways; }
                 }
             }
 
