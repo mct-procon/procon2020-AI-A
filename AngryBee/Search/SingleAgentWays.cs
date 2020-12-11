@@ -40,40 +40,35 @@ namespace AngryBee.Search
                 ++itr;
                 goto loop_start;
             }
-            Array.Sort(Data, 0, actualItr);
             ActualCount = actualItr;
         }
 
         public void End()
         {
             if (Data != null)
-            {
-                for (int i = 0; i < Data.Length; ++i)
-                    ArrayPool<Way>.Shared.Return(Data);
-            }
+                ArrayPool<Way>.Shared.Return(Data);
+            Data = null;
         }
 
         //public ref Way this[int index] {
         //    get => ref data[index];
         //}
 
-        public SingleAgentWaysEnumerator GetEnumerator(int agentsCount) => new SingleAgentWaysEnumerator(this, agentsCount);
+        public SingleAgentWaysEnumerator GetEnumerator() => new SingleAgentWaysEnumerator(this);
     }
 
     public class SingleAgentWaysEnumerator : IEnumerator<Way>
     {
         public SingleAgentWays Parent { get; set; }
-        public int AgentsCount { get; set; }
         private byte Iterator = 0;
         private bool isHead = true;
         public unsafe Way Current => Parent.Data[Iterator];
 
         object IEnumerator.Current => Current;
 
-        public SingleAgentWaysEnumerator(SingleAgentWays parent, int agentsCount)
+        public SingleAgentWaysEnumerator(SingleAgentWays parent)
         {
             Parent = parent;
-            AgentsCount = agentsCount;
         }
 
         public void Dispose()
