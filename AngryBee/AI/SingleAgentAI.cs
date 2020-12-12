@@ -13,19 +13,14 @@ namespace AngryBee.AI
         PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
 
-        private Unsafe16Array<Way>[] dp1 = new Unsafe16Array<Way>[50];  //dp1[i] = 深さi時点での最善手
-        private Unsafe16Array<Way>[] dp2 = new Unsafe16Array<Way>[50];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
+        private Unsafe16Array<Way>[] dp1 = new Unsafe16Array<Way>[100];  //dp1[i] = 深さi時点での最善手
+        private Unsafe16Array<Way>[] dp2 = new Unsafe16Array<Way>[100];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
         private Decision lastTurnDecided = null;		//1ターン前に「実際に」打った手（競合していた場合, 競合手==lastTurnDecidedとなる。競合していない場合は, この変数は探索に使用されない）
         public int StartDepth { get; set; } = 1;
         private Unsafe16Array<AgentState> agentStateAry = new Unsafe16Array<AgentState>();
 
-        public SingleAgentAI(int startDepth = 0, int greedyMaxDepth = 0)
+        public SingleAgentAI(int startDepth = 0)
         {
-            for (int i = 0; i < 50; ++i)
-            {
-                dp1[i] = new Unsafe16Array<Way>();
-                dp2[i] = new Unsafe16Array<Way>();
-            }
             StartDepth = startDepth;
             for (int i = 0; i < 16; ++i)
                 agentStateAry[i] = AgentState.Move;
@@ -76,11 +71,8 @@ namespace AngryBee.AI
         protected override void Solve()
         {
             var myAgents = SearchFirstPlace();
-            for (int i = 0; i < 50; ++i)
-            {
-                dp1[i] = new Unsafe16Array<Way>();
-                dp2[i] = new Unsafe16Array<Way>();
-            }
+            Array.Clear(dp1, 0, dp1.Length);
+            Array.Clear(dp2, 0, dp2.Length);
 
             int deepness = StartDepth;
             int maxDepth = (TurnCount - CurrentTurn) + 1;

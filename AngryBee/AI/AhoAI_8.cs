@@ -15,21 +15,7 @@ namespace AngryBee.AI
         PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
 
-        private class DP
-        {
-            public int Score { get; set; } = -10000;
-            public Unsafe16Array<Way> Ways { get; set; }
-
-            public void UpdateScore(int score, Unsafe16Array<Way> ways)
-            {
-                if (Score < score)
-                {
-                    Ways = ways;
-                }
-            }
-
-        }
-        private DP[] dp = new DP[50];
+        private Unsafe16Array<Way>[] dp = new Unsafe16Array<Way>[100];
         public int StartDepth { get; set; } = 1;
         private Unsafe16Array<AgentState> agentStateAry = new Unsafe16Array<AgentState>();
 
@@ -78,10 +64,7 @@ namespace AngryBee.AI
 
         public AhoAI_8(int startDepth = 1)
         {
-            for (int i = 0; i < 50; ++i)
-            {
-                dp[i] = new DP();
-            }
+            Array.Clear(dp, 0, dp.Length);
             StartDepth = startDepth;
             for (int i = 0; i < 16; ++i)
                 agentStateAry[i] = AgentState.Move;
@@ -91,11 +74,7 @@ namespace AngryBee.AI
         protected override void Solve()
         {
             var myAgents = SearchFirstPlace();
-            for (int i = 0; i < 50; ++i)
-            {
-                dp[i].Score = int.MinValue;
-                dp[i].Ways = new Unsafe16Array<Way>();
-            }
+            Array.Clear(dp, 0, dp.Length);
 
             int deepness = StartDepth;
             int maxDepth = (TurnCount - CurrentTurn) + 1;
@@ -108,13 +87,13 @@ namespace AngryBee.AI
             for (int agent = 0; agent < AgentsCount; ++agent)
             {
                 if (MyAgentsState[agent] == AgentState.NonPlaced) continue;
-                Unsafe16Array<Way> nextways = dp[0].Ways;
+                Unsafe16Array<Way> nextways = dp[0];
                 NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent);
             }
 
             if (CancellationToken.IsCancellationRequested == false)
             {
-                var res = Unsafe16Array.Create(dp[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Locate).ToArray());
+                var res = Unsafe16Array.Create(dp[0].GetEnumerable(AgentsCount).Select(x => x.Locate).ToArray());
                 for (int agent = 0; agent < AgentsCount; ++agent)
                     if (MyAgentsState[agent] == AgentState.NonPlaced) res[agent] = myAgents[agent];
                 SolverResultList.Add(new Decision((byte)AgentsCount, res, agentStateAry));
@@ -141,7 +120,7 @@ namespace AngryBee.AI
                 int j = 0;
                 for (j = 0; j < nowAgent; ++j)
                 {
-                    if (dp[0].Ways[j].Locate == way.Locate)
+                    if (dp[0][j].Locate == way.Locate)
                     {
                         break;
                     }
@@ -155,7 +134,7 @@ namespace AngryBee.AI
                 {
                     nextways[nowAgent] = way;
                     alpha = res;
-                    dp[count].UpdateScore(alpha, nextways);
+                    dp[count] = nextways;
                 }
             }
 
