@@ -9,6 +9,14 @@ namespace AngryBee.PointEvaluator
 {
     public class Normal : Base
     {
-        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, in ColoredBoardNormalSmaller enemyPainted, int Turn, Unsafe16Array<Point> Me, Unsafe16Array<Point> Enemy, ColoredBoardNormalSmaller mySurroundBoard, ColoredBoardNormalSmaller enemySurroundBoard) => ScoreEvaluation.EvaluateGameScore(Painted, enemyPainted, ScoreBoard);
+        public override int Calculate(sbyte[,] ScoreBoard, Search.SearchState state, int Turn)
+        {
+            int retVal = 0;
+            for (uint x = 0; x < ScoreBoard.GetLength(0); ++x)
+                for (uint y = 0; y < ScoreBoard.GetLength(1); ++y)
+                    if (state.MeSurroundBoard[x, y])
+                        retVal += Math.Abs(ScoreBoard[x, y]);
+            return retVal + state.PointVelocity;
+        }
     }
 }

@@ -15,6 +15,7 @@ namespace AngryBee.Search
 		public Unsafe16Array<Point> Enemy;
         public ColoredBoardNormalSmaller MeSurroundBoard;
         public ColoredBoardNormalSmaller EnemySurroundBoard;
+        public int PointVelocity = 0;
 
         private SearchState() { }
 
@@ -151,16 +152,21 @@ namespace AngryBee.Search
             }
         }
 
-        public SearchState GetNextState(int AgentsCount, byte width, byte height, Unsafe16Array<Way> ways)
+        public SearchState GetNextState(int AgentsCount, Unsafe16Array<Way> ways, sbyte[,] scoreBoard)
         {
             var ss = new SearchState();
+            ss.MeSurroundBoard = this.MeSurroundBoard;
+            ss.EnemySurroundBoard = this.EnemySurroundBoard;
             ss.MeBoard = this.MeBoard;
             ss.EnemyBoard = this.EnemyBoard;
             ss.Me = this.Me;
             ss.Enemy = this.Enemy;
+            ss.PointVelocity = PointVelocity;
             for (int i = 0; i < AgentsCount; ++i)
             {
                 var l = ways[i].Locate;
+                if (!ss.MeBoard[l])
+                    ss.PointVelocity += scoreBoard[l.X, l.Y];
                 if (ss.EnemyBoard[l]) // タイル除去
                     ss.EnemyBoard[l] = false;
                 else
@@ -169,18 +175,23 @@ namespace AngryBee.Search
                     ss.Me[i] = l;
                 }
             }
-            UpdateSurroundedState(ways, AgentsCount, width, height);
+            ss.UpdateSurroundedState(ways, AgentsCount, (byte)scoreBoard.GetLength(0), (byte)scoreBoard.GetLength(1));
             return ss;
         }
 
-        public SearchState GetNextStateSingle(int agentIndex, byte width, byte height, Way way)
+        public SearchState GetNextStateSingle(int agentIndex, Way way, sbyte[,] scoreBoard)
         {
             var ss = new SearchState();
+            ss.MeSurroundBoard = this.MeSurroundBoard;
+            ss.EnemySurroundBoard = this.EnemySurroundBoard;
             ss.MeBoard = this.MeBoard;
             ss.EnemyBoard = this.EnemyBoard;
             ss.Me = this.Me;
             ss.Enemy = this.Enemy;
+            ss.PointVelocity = PointVelocity;
             var l = way.Locate;
+            if(!ss.MeBoard[l])
+                ss.PointVelocity += scoreBoard[l.X, l.Y];
             if (ss.EnemyBoard[l]) // タイル除去
                 ss.EnemyBoard[l] = false;
             else
@@ -188,7 +199,7 @@ namespace AngryBee.Search
                 ss.MeBoard[l] = true;
                 ss.Me[agentIndex] = l;
             }
-            UpdateSurroundedState(way, width, height);
+            ss.UpdateSurroundedState(way, (byte)scoreBoard.GetLength(0), (byte)scoreBoard.GetLength(1));
             return ss;
         }
 
@@ -201,7 +212,7 @@ namespace AngryBee.Search
             ss.Enemy = this.Me;
             ss.MeSurroundBoard = this.EnemySurroundBoard;
             ss.EnemySurroundBoard = this.MeSurroundBoard;
-
+            ss.PointVelocity = -PointVelocity;
             return ss;
         }
 
@@ -234,7 +245,6 @@ namespace AngryBee.Search
                     if (Score[i] < score) { Score[i] = score; ways[i] = WayEnumrator[j]; }
                 }
             }
-
 
             for(i = 0; i < AgentsCount; ++i)
             {

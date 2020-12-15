@@ -10,7 +10,7 @@ namespace AngryBee.PointEvaluator
     class Dispersion : Base
     {
         const float DispersionRate = 0.8f;
-        const float SurroundRate = 0.8f;
+        const float SurroundRate = 4.5f;
         private struct PointFloat
         {
             public float x;
@@ -21,29 +21,14 @@ namespace AngryBee.PointEvaluator
                 this.y = y;
             }
         }
-        public override int Calculate(sbyte[,] ScoreBoard, in ColoredBoardNormalSmaller Painted, in ColoredBoardNormalSmaller enemyPainted, int Turn, Unsafe16Array<Point> Me, Unsafe16Array<Point> Enemy, ColoredBoardNormalSmaller mySurroundBoard, ColoredBoardNormalSmaller enemySurroundBoard)
+        public override int Calculate(sbyte[,] ScoreBoard, Search.SearchState state, int Turn)
         {
-            uint width = (uint)ScoreBoard.GetLength(0);
-            uint height = (uint)ScoreBoard.GetLength(1);
-            ColoredBoardNormalSmaller checker = new ColoredBoardNormalSmaller(width, height);
-            int result = 0;
-            for (uint x = 0; x < width; ++x)
-                for (uint y = 0; y < height; ++y)
-                {
-                    if (Painted[x, y])
-                    {
-                        result += ScoreBoard[x, y];
-                        checker[x, y] = true;
-                    }
-                }
-
-            ScoreEvaluation.BadSpaceFill(ref checker, enemyPainted, (byte)width, (byte)height);
-
-            for (uint x = 0; x < width; ++x)
-                for (uint y = 0; y < height; ++y)
-                    if (!checker[x, y])
-                        result = result + (int)(Math.Abs(ScoreBoard[x, y]) * SurroundRate);
-
+            byte width = (byte)ScoreBoard.GetLength(0), height = (byte)ScoreBoard.GetLength(1);
+            int surround = 0;
+            for (uint x = 0; x < ScoreBoard.GetLength(0); ++x)
+                for (uint y = 0; y < ScoreBoard.GetLength(1); ++y)
+                    if (state.MeSurroundBoard[x, y])
+                        surround += Math.Abs(ScoreBoard[x, y]);
             float rec = 0;
             int checkedCount = 0;
             Point sum = new Point();
@@ -51,7 +36,7 @@ namespace AngryBee.PointEvaluator
             for (byte x = 0; x < width; ++x)
                 for (byte y = 0; y < height; ++y)
                 {
-                    if (Painted[x, y])
+                    if (state.MeBoard[x, y])
                     {
                         checkedCount++;
                         sum += (x, y);
@@ -62,14 +47,14 @@ namespace AngryBee.PointEvaluator
             for (uint x = 0; x < width; ++x)
                 for (uint y = 0; y < height; ++y)
                 {
-                    if (Painted[x, y])
+                    if (state.MeBoard[x, y])
                     {
                         float tmp = Math.Abs((average.x - x)) + Math.Abs((average.y - y));
                         rec += tmp * tmp;
                     }
                 }
-            rec = rec / checkedCount * DispersionRate;
-            return (int)rec + result + checkedCount;
+            rec /= checkedCount;
+            return (int)(rec * DispersionRate) + ((int)(surround * SurroundRate) + state.PointVelocity) * width * height / 4;
         }
     }
 }

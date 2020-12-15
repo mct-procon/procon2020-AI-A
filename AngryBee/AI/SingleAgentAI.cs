@@ -78,7 +78,7 @@ namespace AngryBee.AI
             int maxDepth = (TurnCount - CurrentTurn) + 1;
             PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
             SearchState state = new SearchState(MyBoard, EnemyBoard, myAgents, EnemyAgents, MySurroundedBoard, EnemySurroundedBoard);
-            int score = PointEvaluator_Normal.Calculate(ScoreBoard, state.MeBoard, state.EnemyBoard, 0, state.Me, state.Enemy, state.MeSurroundBoard, state.EnemySurroundBoard) - PointEvaluator_Normal.Calculate(ScoreBoard, state.EnemyBoard, state.MeBoard, 0, state.Enemy, state.Me, state.EnemySurroundBoard, state.MeSurroundBoard);
+            int score = PointEvaluator_Normal.Calculate(ScoreBoard, state, 0);
 
             Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
             //if (!(lastTurnDecided is null)) Log("IsAgent1Moved = {0}, IsAgent2Moved = {1}, lastTurnDecided = {2}", IsAgent1Moved, IsAgent2Moved, lastTurnDecided);
@@ -162,9 +162,7 @@ namespace AngryBee.AI
         private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe16Array<Way> nextways, int nowAgent, int watch_deepness)
         {
             if (deepness == 0)
-            {
-                return evaluator.Calculate(ScoreBoard, state.MeBoard, state.EnemyBoard, 0, state.Me, state.Enemy, state.MeSurroundBoard, state.EnemySurroundBoard) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, state.MeBoard, 0, state.Enemy, state.Me, state.EnemySurroundBoard, state.MeSurroundBoard);
-            }
+                return evaluator.Calculate(ScoreBoard, state, 0);
 
             SingleAgentWays ways = state.MakeMovesSingle(AgentsCount, nowAgent, ScoreBoard);
 
@@ -200,7 +198,7 @@ namespace AngryBee.AI
                 if (j != AgentsCount) continue;
                 
 
-                SearchState newState = state.GetNextStateSingle(nowAgent, (byte)ScoreBoard.GetLength(0), (byte)ScoreBoard.GetLength(1), way);
+                SearchState newState = state.GetNextStateSingle(nowAgent, way, ScoreBoard);
 
                 int res = NegaMax(deepness - 1, newState, alpha, count + 1, evaluator, ngMove, nextways, nowAgent, watch_deepness);
                 if (alpha < res)

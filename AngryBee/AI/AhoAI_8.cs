@@ -105,9 +105,7 @@ namespace AngryBee.AI
         private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe16Array<Way> nextways, int nowAgent)
         {
             if (deepness == 0)
-            {
-                return evaluator.Calculate(ScoreBoard, state.MeBoard, state.EnemyBoard, 0, state.Me, state.Enemy, state.MeSurroundBoard, state.EnemySurroundBoard) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, state.MeBoard, 0, state.Enemy, state.Me, state.EnemySurroundBoard, state.MeSurroundBoard);
-            }
+                return evaluator.Calculate(ScoreBoard, state, 0);
 
             SingleAgentWays ways = state.MakeMovesSingle(AgentsCount, nowAgent, ScoreBoard);
 
@@ -127,7 +125,7 @@ namespace AngryBee.AI
                 }
                 if (j != nowAgent) continue;
 
-                SearchState newState = state.GetNextStateSingle(nowAgent, (byte)ScoreBoard.GetLength(0), (byte)ScoreBoard.GetLength(1), way);
+                SearchState newState = state.GetNextStateSingle(nowAgent, way, ScoreBoard);
 
                 int res = NegaMax(deepness - 1, newState, alpha, count + 1, evaluator, ngMove, nextways, nowAgent);
                 if (alpha < res)
