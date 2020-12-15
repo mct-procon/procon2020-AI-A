@@ -41,7 +41,7 @@ namespace AngryBee.AI
             Unsafe16Array<Point> newMyAgents = MyAgents;
             for (int x = 0; x < ScoreBoard.GetLength(0); ++x)
                 for (int y = 0; y < ScoreBoard.GetLength(1); ++y)
-                    if (ScoreBoard[x, y] >= 10)
+                    if (ScoreBoard[x, y] >= 0)
                         recommends.Add(new Point((byte)x,(byte)y));
 
             foreach (var p in recommends.OrderBy(i => rand.Next()))
@@ -200,7 +200,7 @@ namespace AngryBee.AI
                 if (j != AgentsCount) continue;
                 
 
-                SearchState newState = state.GetNextStateSingle(nowAgent, way);
+                SearchState newState = state.GetNextStateSingle(nowAgent, (byte)ScoreBoard.GetLength(0), (byte)ScoreBoard.GetLength(1), way);
 
                 int res = NegaMax(deepness - 1, newState, alpha, count + 1, evaluator, ngMove, nextways, nowAgent, watch_deepness);
                 if (alpha < res)

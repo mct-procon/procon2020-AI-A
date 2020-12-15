@@ -209,7 +209,7 @@ namespace AngryBee.AI
                     if (j != AgentsCount) continue;
                 }
 
-                SearchState newState = state.GetNextStateSingle(nowAgent, way);
+                SearchState newState = state.GetNextStateSingle(nowAgent, (byte)ScoreBoard.GetLength(0), (byte)ScoreBoard.GetLength(1), way);
                 
                 int res = NegaMax(deepness - 1, newState, alpha, count + 1, evaluator, ngMove, nextways, nowAgent);
                 if (alpha < res)

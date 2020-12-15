@@ -32,7 +32,126 @@ namespace AngryBee.Search
         public MultiAgentWays MakeMoves(int AgentsCount, sbyte[,] ScoreBoard) => new MultiAgentWays(this, AgentsCount, ScoreBoard);
         public SingleAgentWays MakeMovesSingle(int agentsCount, int agentIndex, sbyte[,] scoreBoard) => new SingleAgentWays(this, agentsCount, agentIndex, scoreBoard);
 
-        public SearchState GetNextState(int AgentsCount, Unsafe16Array<Way> ways)
+        private static ReadOnlySpan<VelocityPoint> Surrounder => new VelocityPoint[] { new VelocityPoint(1,0), new VelocityPoint(0, 1), new VelocityPoint(-1, 0), new VelocityPoint(0, -1) }; 
+        private static ReadOnlySpan<VelocityPoint> Around => new VelocityPoint[] { new VelocityPoint(1,0), new VelocityPoint(1, -1), new VelocityPoint(1, 1), new VelocityPoint(0, 1), new VelocityPoint(-1, 1), new VelocityPoint(-1, 0), new VelocityPoint(-1, -1), new VelocityPoint(0, -1)};
+        public void UpdateSurroundedState(Way agent, byte width, byte height)
+        {
+            int fills = 0;
+            for(int i = 0; i < Surrounder.Length; ++i)
+            {
+                var p = agent.Locate + Surrounder[i];
+                if (p.X < width && p.Y < height && MeBoard[p])
+                    fills++;
+            }
+            if (fills < 2) return;
+            Span<Point> myStack = stackalloc Point[24 * 24];
+
+            Point point;
+            int myStackSize = 0;
+            ColoredBoardNormalSmaller Walls = MeBoard;
+            Walls.Or(EnemyBoard);
+            ColoredBoardNormalSmaller Checker = new ColoredBoardNormalSmaller(width, 0);
+            ColoredBoardNormalSmaller BadSpaces = new ColoredBoardNormalSmaller(width, height);
+            for (int a_iter = 0; a_iter < Around.Length; ++a_iter)
+            {
+                point = agent.Locate + Around[a_iter];
+                if (point.X >= width || point.Y >= height || Walls[point]) continue;
+                Checker.Clear(height);
+                myStack[0] = point;
+                myStackSize = 1;
+                while (myStackSize > 0)
+                {
+                    point = myStack[--myStackSize];
+                    for (int i = 0; i < 8; i++)
+                    {
+                        var a = Around[i];
+                        var searchTo = point + a;
+                        if (searchTo.X >= width || searchTo.Y >= height)
+                            goto finish;
+                        if (Walls[searchTo]) continue;    // wall
+                        if (Checker[searchTo]) continue;  // needless to search
+                        if (BadSpaces[searchTo])          // reached to bad space.
+                            goto finish;
+                        myStack[myStackSize++] = searchTo;
+                        Checker[searchTo] = true;
+                    }
+                }
+            finish:
+                if (myStackSize > 0)
+                    BadSpaces.Or(Checker);
+                else
+                {
+                    MeSurroundBoard.Or(Checker);
+                    Checker.Invert(height);
+                    EnemySurroundBoard.And(Checker, height);
+                }
+            }
+        }
+
+        public void UpdateSurroundedState(Unsafe16Array<Way> agents, int agentsCount, byte width, byte height)
+        {
+            bool lazy = false;
+            ColoredBoardNormalSmaller Walls, Checker, BadSpaces;
+            Span<Point> myStack = stackalloc Point[24 * 24];
+            for (int agentNum = 0; agentNum < agentsCount; ++agentNum)
+            {
+                var agent = agents[agentNum];
+                int fills = 0;
+                for (int i = 0; i < Surrounder.Length; ++i)
+                {
+                    var p = agent.Locate + Surrounder[i];
+                    if (p.X < width && p.Y < height && MeBoard[p])
+                        fills++;
+                }
+                if (fills < 2) continue;
+                if(!lazy)
+                {
+                    Walls = MeBoard;
+                    Walls.Or(EnemyBoard);
+                    Checker = new ColoredBoardNormalSmaller(width, 0);
+                    BadSpaces = new ColoredBoardNormalSmaller(width, height);
+                    lazy = true;
+                }
+                Point point;
+                int myStackSize = 0;
+                for (int a_iter = 0; a_iter < Around.Length; ++a_iter)
+                {
+                    point = agent.Locate + Around[a_iter];
+                    if (point.X >= width || point.Y >= height) continue;
+                    Checker.Clear(height);
+                    myStack[0] = point;
+                    myStackSize = 1;
+                    while (myStackSize > 0)
+                    {
+                        point = myStack[--myStackSize];
+                        for (int i = 0; i < 8; i++)
+                        {
+                            var a = Around[i];
+                            var searchTo = point + a;
+                            if (searchTo.X >= width || searchTo.Y >= height)
+                                goto finish;
+                            if (Walls[searchTo]) continue;    // wall
+                            if (Checker[searchTo]) continue;  // needless to search
+                            if (BadSpaces[searchTo])          // reached to bad space.
+                                goto finish;
+                            myStack[myStackSize++] = searchTo;
+                            Checker[searchTo] = true;
+                        }
+                    }
+                finish:
+                    if (myStackSize > 0)
+                        BadSpaces.Or(Checker);
+                    else
+                    {
+                        MeSurroundBoard.Or(Checker);
+                        Checker.Invert(height);
+                        EnemySurroundBoard.And(Checker, height);
+                    }
+                }
+            }
+        }
+
+        public SearchState GetNextState(int AgentsCount, byte width, byte height, Unsafe16Array<Way> ways)
         {
             var ss = new SearchState();
             ss.MeBoard = this.MeBoard;
@@ -50,12 +169,11 @@ namespace AngryBee.Search
                     ss.Me[i] = l;
                 }
             }
-            //TODO: 囲まれ判定の呼び出し ss.MeSurroundBoard = ;
-            //TODO: 囲まれ判定の呼び出し ss.EnemySurroundBoard = ;
+            UpdateSurroundedState(ways, AgentsCount, width, height);
             return ss;
         }
 
-        public SearchState GetNextStateSingle(int agentIndex, Way way)
+        public SearchState GetNextStateSingle(int agentIndex, byte width, byte height, Way way)
         {
             var ss = new SearchState();
             ss.MeBoard = this.MeBoard;
@@ -70,8 +188,7 @@ namespace AngryBee.Search
                 ss.MeBoard[l] = true;
                 ss.Me[agentIndex] = l;
             }
-            //TODO: 囲まれ判定の呼び出し ss.MeSurroundBoard = ;
-            //TODO: 囲まれ判定の呼び出し ss.EnemySurroundBoard = ;
+            UpdateSurroundedState(way, width, height);
             return ss;
         }
 
