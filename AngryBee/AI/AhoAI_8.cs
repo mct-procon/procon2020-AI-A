@@ -15,7 +15,7 @@ namespace AngryBee.AI
         PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
 
-        private Unsafe16Array<Way>[] dp = new Unsafe16Array<Way>[100];
+        private Unsafe16Array<Point>[] dp = new Unsafe16Array<Point>[100];
         public int StartDepth { get; set; } = 1;
         private Unsafe16Array<AgentState> agentStateAry = new Unsafe16Array<AgentState>();
 
@@ -87,13 +87,13 @@ namespace AngryBee.AI
             for (int agent = 0; agent < AgentsCount; ++agent)
             {
                 if (MyAgentsState[agent] == AgentState.NonPlaced) continue;
-                Unsafe16Array<Way> nextways = dp[0];
+                Unsafe16Array<Point> nextways = dp[0];
                 NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, nextways, agent);
             }
 
             if (CancellationToken.IsCancellationRequested == false)
             {
-                var res = Unsafe16Array.Create(dp[0].GetEnumerable(AgentsCount).Select(x => x.Locate).ToArray());
+                var res = dp[0];
                 for (int agent = 0; agent < AgentsCount; ++agent)
                     if (MyAgentsState[agent] == AgentState.NonPlaced) res[agent] = myAgents[agent];
                 SolverResultList.Add(new Decision((byte)AgentsCount, res, agentStateAry));
@@ -102,23 +102,23 @@ namespace AngryBee.AI
 
         //Meが動くとする。「Meのスコア - Enemyのスコア」の最大値を返す。
         //NegaMaxではない
-        private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe16Array<Way> nextways, int nowAgent)
+        private int NegaMax(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, Unsafe16Array<Point> nextways, int nowAgent)
         {
             if (deepness == 0)
                 return evaluator.Calculate(ScoreBoard, state, 0);
 
             SingleAgentWays ways = state.MakeMovesSingle(AgentsCount, nowAgent, ScoreBoard);
 
-            int i = 0;
-            foreach (var way in ways)
+            for(int i = 0; i < ways.Count; ++i)
             {
+                Point way = ways.Data[i];
                 if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
                 i++;
 
                 int j = 0;
                 for (j = 0; j < nowAgent; ++j)
                 {
-                    if (dp[0][j].Locate == way.Locate)
+                    if (dp[0][j] == way)
                     {
                         break;
                     }

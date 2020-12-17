@@ -36,7 +36,7 @@ namespace AngryBee.Search
         private static ReadOnlySpan<VelocityPoint> Surrounder => new VelocityPoint[] { new VelocityPoint(1,0), new VelocityPoint(0, 1), new VelocityPoint(-1, 0), new VelocityPoint(0, -1) }; 
         private static ReadOnlySpan<VelocityPoint> Around => new VelocityPoint[] { new VelocityPoint(1,0), new VelocityPoint(1, -1), new VelocityPoint(1, 1), new VelocityPoint(0, 1), new VelocityPoint(-1, 1), new VelocityPoint(-1, 0), new VelocityPoint(-1, -1), new VelocityPoint(0, -1)};
 
-        public void UpdateSurroundedState(Unsafe16Array<Way> agents, int agentsCount, byte width, byte height, int deepness)
+        public void UpdateSurroundedState(Unsafe16Array<Point> agents, int agentsCount, byte width, byte height, int deepness)
         {
             bool lazy = false;
             ColoredBoardNormalSmaller Walls, Checker, BadSpaces;
@@ -47,7 +47,7 @@ namespace AngryBee.Search
                 int fills = 0;
                 for (int i = 0; i < Surrounder.Length; ++i)
                 {
-                    var p = agent.Locate + Surrounder[i];
+                    var p = agent + Surrounder[i];
                     if (p.X < width && p.Y < height && MeBoard[p])
                         fills++;
                 }
@@ -64,7 +64,7 @@ namespace AngryBee.Search
                 int myStackSize = 0;
                 for (int a_iter = 0; a_iter < Around.Length; ++a_iter)
                 {
-                    point = agent.Locate + Around[a_iter];
+                    point = agent + Around[a_iter];
                     if (point.X >= width || point.Y >= height) continue;
                     Checker.Clear(height);
                     myStack[0] = point;
@@ -108,12 +108,12 @@ namespace AngryBee.Search
             }
         }
 
-        public void UpdateSurroundedState(Way agent, byte width, byte height, int deepness)
+        public void UpdateSurroundedState(Point agent, byte width, byte height, int deepness)
         {
             int fills = 0;
             for (int i = 0; i < Surrounder.Length; ++i)
             {
-                var p = agent.Locate + Surrounder[i];
+                var p = agent + Surrounder[i];
                 if (p.X < width && p.Y < height && MeBoard[p])
                     fills++;
             }
@@ -128,7 +128,7 @@ namespace AngryBee.Search
             ColoredBoardNormalSmaller BadSpaces = new ColoredBoardNormalSmaller(width, height);
             for (int a_iter = 0; a_iter < Around.Length; ++a_iter)
             {
-                point = agent.Locate + Around[a_iter];
+                point = agent + Around[a_iter];
                 if (point.X >= width || point.Y >= height || Walls[point]) continue;
                 Checker.Clear(height);
                 myStack[0] = point;
@@ -173,7 +173,7 @@ namespace AngryBee.Search
                 }
             }
         }
-        public SearchState GetNextState(int AgentsCount, Unsafe16Array<Way> ways, sbyte[,] scoreBoard, int deepness)
+        public SearchState GetNextState(int AgentsCount, Unsafe16Array<Point> ways, sbyte[,] scoreBoard, int deepness)
         {
             var ss = new SearchState();
             ss.MeSurroundBoard = this.MeSurroundBoard;
@@ -185,22 +185,22 @@ namespace AngryBee.Search
             ss.PointVelocity = PointVelocity;
             for (int i = 0; i < AgentsCount; ++i)
             {
-                var l = ways[i].Locate;
-                if (!ss.MeBoard[l])
-                    ss.PointVelocity += scoreBoard[l.X, l.Y];
-                if (ss.EnemyBoard[l]) // タイル除去
-                    ss.EnemyBoard[l] = false;
+                var way = ways[i];
+                if (!ss.MeBoard[way])
+                    ss.PointVelocity += scoreBoard[way.X, way.Y];
+                if (ss.EnemyBoard[way]) // タイル除去
+                    ss.EnemyBoard[way] = false;
                 else
                 {
-                    ss.MeBoard[l] = true;
-                    ss.Me[i] = l;
+                    ss.MeBoard[way] = true;
+                    ss.Me[i] = way;
                 }
             }
             ss.UpdateSurroundedState(ways, AgentsCount, (byte)scoreBoard.GetLength(0), (byte)scoreBoard.GetLength(1), deepness);
             return ss;
         }
 
-        public SearchState GetNextStateSingle(int agentIndex, Way way, sbyte[,] scoreBoard)
+        public SearchState GetNextStateSingle(int agentIndex, Point way, sbyte[,] scoreBoard)
         {
             var ss = new SearchState();
             ss.MeSurroundBoard = this.MeSurroundBoard;
@@ -210,20 +210,19 @@ namespace AngryBee.Search
             ss.Me = this.Me;
             ss.Enemy = this.Enemy;
             ss.PointVelocity = PointVelocity;
-            var l = way.Locate;
-            if (!ss.MeBoard[l])
-                ss.PointVelocity += scoreBoard[l.X, l.Y];
-            if (ss.EnemyBoard[l]) // タイル除去
-                ss.EnemyBoard[l] = false;
+            if (!ss.MeBoard[way])
+                ss.PointVelocity += scoreBoard[way.X, way.Y];
+            if (ss.EnemyBoard[way]) // タイル除去
+                ss.EnemyBoard[way] = false;
             else
             {
-                ss.MeBoard[l] = true;
-                ss.Me[agentIndex] = l;
+                ss.MeBoard[way] = true;
+                ss.Me[agentIndex] = way;
             }
             ss.UpdateSurroundedState(way, (byte)scoreBoard.GetLength(0), (byte)scoreBoard.GetLength(1), -1);
             return ss;
         }
-        public SearchState GetNextStateSingle(int agentIndex, Way way, sbyte[,] scoreBoard, int deepness)
+        public SearchState GetNextStateSingle(int agentIndex, Point way, sbyte[,] scoreBoard, int deepness)
         {
             var ss = new SearchState();
             ss.MeSurroundBoard = this.MeSurroundBoard;
@@ -233,15 +232,14 @@ namespace AngryBee.Search
             ss.Me = this.Me;
             ss.Enemy = this.Enemy;
             ss.PointVelocity = PointVelocity;
-            var l = way.Locate;
-            if (!ss.MeBoard[l])
-                ss.PointVelocity += scoreBoard[l.X, l.Y] * deepness;
-            if (ss.EnemyBoard[l]) // タイル除去
-                ss.EnemyBoard[l] = false;
+            if (!ss.MeBoard[way])
+                ss.PointVelocity += scoreBoard[way.X, way.Y] * deepness;
+            if (ss.EnemyBoard[way]) // タイル除去
+                ss.EnemyBoard[way] = false;
             else
             {
-                ss.MeBoard[l] = true;
-                ss.Me[agentIndex] = l;
+                ss.MeBoard[way] = true;
+                ss.Me[agentIndex] = way;
             }
             ss.UpdateSurroundedState(way, (byte)scoreBoard.GetLength(0), (byte)scoreBoard.GetLength(1), deepness);
             return ss;
