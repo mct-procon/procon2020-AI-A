@@ -46,8 +46,9 @@ namespace AngryBee
             if (portId == 1) portId = 15000;
             //Console.WriteLine("探索の深さの上限を入力（深さ = ターン数 * 2, 5以下が目安）");
             //Ai_PriorityErasing.MaxDepth = int.Parse(Console.ReadLine());
-
-            AI.StartSync(portId, true);
+            Console.WriteLine("Hostname＞");
+            string hostname = Console.ReadLine();
+            AI.StartSync(portId, hostname, true);
 
             /*byte width = 12;
             byte height = 12;
