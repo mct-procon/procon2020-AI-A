@@ -10,7 +10,8 @@ namespace AngryBee.PointEvaluator
     class Dispersion : Base
     {
         const float DispersionRate = 0.8f;
-        const float SurroundRate = 4.5f;
+        const float SurroundRate = 1.2f;
+        const float FasterSurroundRate = 3.2f;
         private struct PointFloat
         {
             public float x;
@@ -54,7 +55,7 @@ namespace AngryBee.PointEvaluator
                     }
                 }
             rec /= checkedCount;
-            return (int)(rec * DispersionRate) + ((int)(surround * SurroundRate) + state.PointVelocity) * width * height / 4;
+            return (int)(state.SurroundVelocity * FasterSurroundRate) + (int)(rec * DispersionRate) + ((int)(surround * SurroundRate) + state.PointVelocity) * width * height / 4;
         }
     }
 }

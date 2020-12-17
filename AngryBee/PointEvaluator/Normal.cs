@@ -9,6 +9,7 @@ namespace AngryBee.PointEvaluator
 {
     public class Normal : Base
     {
+        const float FasterSurroundRate = 3.2f;
         public override int Calculate(sbyte[,] ScoreBoard, Search.SearchState state, int Turn)
         {
             int retVal = 0;
@@ -16,7 +17,7 @@ namespace AngryBee.PointEvaluator
                 for (uint y = 0; y < ScoreBoard.GetLength(1); ++y)
                     if (state.MeSurroundBoard[x, y])
                         retVal += Math.Abs(ScoreBoard[x, y]);
-            return retVal + state.PointVelocity;
+            return (int)(state.SurroundVelocity * FasterSurroundRate) + retVal + state.PointVelocity;
         }
     }
 }
