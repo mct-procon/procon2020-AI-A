@@ -45,10 +45,84 @@ namespace AngryBee.AI
             Random rand = new Random();
             List<Point> recommends = new List<Point>();
             Unsafe16Array<Point> newMyAgents = MyAgents;
+
+
+            //均等に配置する
+            //平方根を用いていろいろする
+            int xn = (int)Math.Sqrt(AgentsCount);
+            int yn = AgentsCount / xn;
+            int ratio = ScoreBoard.GetLength(0) / ScoreBoard.GetLength(1); //縦横の比率
+            if (ScoreBoard.GetLength(0) > ScoreBoard.GetLength(1))
+            {
+                int tmp = xn;
+                xn = yn;
+                yn = tmp;
+            }
+            int left = AgentsCount - (xn * yn); //AgentsCountが7の時など、エージェントが余ってしまうときに
+            int spaceX = ScoreBoard.GetLength(0) / (xn * ratio);
+            int spaceY = ScoreBoard.GetLength(1) / yn;
+            int flag = 0;
+            for (byte i = 0; i < AgentsCount - left; i++)
+            {
+                for(byte j = 0; j < spaceX / 2; j++)
+                {
+                    if (ScoreBoard[(spaceX * (i % xn) + spaceX / 2 + j) * ratio, spaceY * (i / xn) + spaceY / 2] >= 0)
+                    {
+                        recommends.Add(new Point((byte)((spaceX * (i % xn) + spaceX / 2 + j)*ratio), (byte)(spaceY * (i / xn) + spaceY / 2)));
+                        flag = 1;
+                        break;
+                    }
+                }
+                for (byte j = 0; j < spaceX / 2; j++)
+                {
+                    if (ScoreBoard[(spaceX * (i % xn) + spaceX / 2 - j) * ratio, spaceY * (i / xn) + spaceY / 2] >= 0 && flag == 0)
+                    {
+                        recommends.Add(new Point((byte)((spaceX * (i % xn) + spaceX / 2 - j) * ratio), (byte)(spaceY * (i / xn) + spaceY / 2)));
+                        flag = 1;
+                        break;
+                    }
+                }
+                for (byte j = 0; j < spaceY / 2; j++)
+                {
+                    if (ScoreBoard[(spaceX * (i % xn) + spaceX / 2) * ratio, spaceY * (i / xn) + spaceY / 2 + j] >= 0 && flag == 0)
+                    {
+                        recommends.Add(new Point((byte)((spaceX * (i % xn) + spaceX / 2) * ratio), (byte)(spaceY * (i / xn) + spaceY / 2 + j)));
+                        flag = 1;
+                        break;
+                    }
+                }
+                for (byte j = 0; j < spaceX / 2; j++)
+                {
+                    if (ScoreBoard[(spaceX * (i % xn) + spaceX / 2) * ratio, spaceY * (i / xn) + spaceY / 2 - j] >= 0 && flag == 0)
+                    {
+                        recommends.Add(new Point((byte)((spaceX * (i % xn) + spaceX / 2) * ratio), (byte)(spaceY * (i / xn) + spaceY / 2 - j)));
+                        flag = 1;
+                        break;
+                    }
+                }
+                if (flag == 0)
+                    recommends.Add(new Point((byte)((spaceX * (i % xn) + spaceX / 2) * ratio), (byte)(spaceY * (i / xn) + spaceY / 2)));
+            }
+
+            //余ったエージェントの配置
+            // 10点より高いところに配置する
+            byte num = 0;
             for (int x = 0; x < ScoreBoard.GetLength(0); ++x)
                 for (int y = 0; y < ScoreBoard.GetLength(1); ++y)
-                    if (ScoreBoard[x, y] >= 0)
-                        recommends.Add(new Point((byte)x,(byte)y));
+                    if (ScoreBoard[x, y] >= 0 && num < left)
+                    {
+                        recommends.Add(new Point((byte)x, (byte)y));
+                        num++;
+                    }
+
+            //まだ余っていたら
+            for (int x = 0; x < ScoreBoard.GetLength(0); ++x)
+                for (int y = 0; y < ScoreBoard.GetLength(1); ++y)
+                    if (ScoreBoard[x, y] >= -1 && num < left)
+                    {
+                        recommends.Add(new Point((byte)x, (byte)y));
+                        num++;
+                    }
 
             foreach (var p in recommends.OrderBy(i => rand.Next()))
             {
