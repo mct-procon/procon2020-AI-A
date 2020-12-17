@@ -92,7 +92,13 @@ namespace AngryBee.AI
             }
 
             if (left == 0) return newMyAgents;
-            int cur = AgentsCount - (int)left;
+            int cur = AgentsCount - (int)left - 1;
+            for(;; ++cur)
+            {
+                if (cur >= AgentsCount) return newMyAgents;
+                if (MyAgentsState[cur] == AgentState.Move) continue;
+                break;
+            }
             Random rand = new Random();
             List<Point> recommends = new List<Point>();
             //余ったエージェントの配置
@@ -104,9 +110,12 @@ namespace AngryBee.AI
 
             foreach (var p in recommends.OrderBy(i => rand.Next()))
             {
+                do
+                {
+                    cur++;
+                    if (cur >= AgentsCount) return newMyAgents;
+                } while (MyAgentsState[cur] == AgentState.Move);
                 newMyAgents[cur] = p;
-                cur++;
-                if (cur >= AgentsCount) return newMyAgents;
             }
 
             //まだ余っていたら
@@ -229,7 +238,7 @@ namespace AngryBee.AI
             for (int agent = 0; agent < AgentsCount; ++agent)
             {
                 StringBuilder sb = new StringBuilder();
-                sb.Append($"AGENT {agent}:");
+                sb.Append($"AGENT {agent}: {MyAgents[agent]} ->");
                 for (int i = 0; i < 10; ++i)
                 {
                     sb.Append("  ");
