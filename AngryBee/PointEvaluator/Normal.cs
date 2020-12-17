@@ -9,7 +9,7 @@ namespace AngryBee.PointEvaluator
 {
     public class Normal : Base
     {
-        const float FasterSurroundRate = 3.2f;
+        const float FasterSurroundRate = 1.2f;
         public override int Calculate(sbyte[,] ScoreBoard, Search.SearchState state, int Turn)
         {
             int retVal = 0;

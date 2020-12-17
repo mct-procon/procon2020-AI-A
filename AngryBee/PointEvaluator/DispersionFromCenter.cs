@@ -10,8 +10,8 @@ namespace AngryBee.PointEvaluator
     class DispersionFromCenter : Base
     {
         const float DispersionRate = 0.8f;
-        const float SurroundRate = 1.2f;
-        const float FasterSurroundRate = 3.2f;
+        const float SurroundRate = 2.4f;
+        const float FasterSurroundRate = 1.2f;
         private struct PointFloat
         {
             public float x;
