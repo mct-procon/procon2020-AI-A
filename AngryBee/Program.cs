@@ -9,9 +9,8 @@ namespace AngryBee
         public static void Main(string[] args)
 		{
 			int aiType = 0;
-			Console.WriteLine("AIの種類を入力(2:Aoki_8, 3:Aho_8, 4:SA_AI)");
+			Console.WriteLine("AIの種類を入力(3:Aho_8, 4:SA_AI)");
 			aiType = int.Parse(Console.ReadLine());
-
 			MCTProcon31Protocol.AIFramework.AIBase AI = null;
 
 			//if (aiType == 1) {
@@ -20,10 +19,10 @@ namespace AngryBee
    ////             greedyMaxDepth = int.Parse(Console.ReadLine());
    //             AI = new AI.NaottiAI(1, greedyMaxDepth);
    //         }
-            if (aiType == 2)
-            {
-                AI = new AI.AokiAI_8(1);
-            }
+            //if (aiType == 2)
+            //{
+            //    AI = new AI.AokiAI_8(1);
+            //}
             if(aiType == 3)
             {
                 AI = new AI.AhoAI_8();
