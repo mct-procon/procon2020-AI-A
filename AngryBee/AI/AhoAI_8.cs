@@ -12,7 +12,6 @@ namespace AngryBee.AI
 {
     public class AhoAI_8 : MCTProcon31Protocol.AIFramework.AIBase
     {
-        PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
 
         private Unsafe16Array<Point>[] dp = new Unsafe16Array<Point>[100];
@@ -77,7 +76,6 @@ namespace AngryBee.AI
             Array.Clear(dp, 0, dp.Length);
 
             int deepness = StartDepth;
-            int maxDepth = (TurnCount - CurrentTurn) + 1;
             //PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
             PointEvaluator.Base evaluator = PointEvaluator_Normal;
             SearchState state = new SearchState(MyBoard, EnemyBoard, myAgents, EnemyAgents, MySurroundedBoard, EnemySurroundedBoard);

@@ -31,19 +31,19 @@
 //            }
 //        }
 
-//        private DP[] dp1 = new DP[50];	//dp1[i] = 深さi時点での最善手
-//		private DP[] dp2 = new DP[50];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
-//		private Decision lastTurnDecided = null;		//1ターン前に「実際に」打った手（競合していた場合, 競合手==lastTurnDecidedとなる。競合していない場合は, この変数は探索に使用されない）
+//        private DP[] dp1 = new DP[50];  //dp1[i] = 深さi時点での最善手
+//        private DP[] dp2 = new DP[50];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
+//        private Decision lastTurnDecided = null;		//1ターン前に「実際に」打った手（競合していた場合, 競合手==lastTurnDecidedとなる。競合していない場合は, この変数は探索に使用されない）
 //        private int greedyMaxDepth = 0;         //探索延長の最大手数
 //        public int StartDepth { get; set; } = 1;
 
 //        public NaottiAI(int startDepth = 1, int greedyMaxDepth = 4)
 //        {
-//			for (int i = 0; i < 50; ++i)
-//			{
-//				dp1[i] = new DP();
-//				dp2[i] = new DP();
-//			}
+//            for (int i = 0; i < 50; ++i)
+//            {
+//                dp1[i] = new DP();
+//                dp2[i] = new DP();
+//            }
 //            StartDepth = startDepth;
 //            this.greedyMaxDepth = greedyMaxDepth;
 //        }
@@ -52,10 +52,10 @@
 //        //1ターン = 深さ2
 //        protected override void Solve()
 //        {
-//			for (int i = 0; i < 50; ++i)
-//			{
-//				dp1[i].Score = int.MinValue;
-//				dp2[i].Score = int.MinValue;
+//            for (int i = 0; i < 50; ++i)
+//            {
+//                dp1[i].Score = int.MinValue;
+//                dp2[i].Score = int.MinValue;
 //                dp1[i].Ways = new Unsafe16Array<Way>();
 //                dp2[i].Ways = new Unsafe16Array<Way>();
 //            }
@@ -64,15 +64,27 @@
 //            int maxDepth = (TurnCount - CurrentTurn) * 2 + 2;
 //            PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
 //            SearchState state = new SearchState(MyBoard, EnemyBoard, MyAgents, EnemyAgents);
-//            int score = PointEvaluator_Normal.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - PointEvaluator_Normal.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me);
+//            int score = 0;
+//            for (uint x = 0; x < ScoreBoard.GetLength(0); ++x)
+//                for (uint y = 0; y < ScoreBoard.GetLength(1); ++y)
+//                {
+//                    if (MyBoard[x, y])
+//                        score += ScoreBoard[x, y];
+//                    else if (MySurroundedBoard[x, y])
+//                        score += Math.Abs(ScoreBoard[x, y]);
+//                    else if (EnemyBoard[x, y])
+//                        score -= ScoreBoard[x, y];
+//                    else if (EnemySurroundedBoard[x, y])
+//                        score -= Math.Abs(ScoreBoard[x, y]);
+//                }
 
 //            Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
-//			//if (!(lastTurnDecided is null)) Log("IsAgent1Moved = {0}, IsAgent2Moved = {1}, lastTurnDecided = {2}", IsAgent1Moved, IsAgent2Moved, lastTurnDecided);
+//            //if (!(lastTurnDecided is null)) Log("IsAgent1Moved = {0}, IsAgent2Moved = {1}, lastTurnDecided = {2}", IsAgent1Moved, IsAgent2Moved, lastTurnDecided);
 
 //            if (!(lastTurnDecided is null) && score > 0)    //勝っている状態で競合していたら
 //            {
 //                int i;
-//                for(i = 0; i < AgentsCount; ++i)
+//                for (i = 0; i < AgentsCount; ++i)
 //                {
 //                    if (IsAgentsMoved[i]) break;
 //                }
@@ -84,18 +96,18 @@
 //            }
 //            for (; deepness <= maxDepth; deepness++)
 //            {
-//				Decided resultList = new Decided();
+//                Decided resultList = new Decided();
 
 //                int greedyDepth = Math.Min(greedyMaxDepth, maxDepth - deepness);
 //                if ((deepness + greedyDepth) % 2 == 1 && greedyDepth > 0) greedyDepth--;
 //                //普通にNegaMaxをして、最善手を探す
 //                NegaMax(deepness, state, int.MinValue + 1, int.MaxValue, 0, evaluator, null, greedyDepth);
-//				Decision best1 = new Decision((byte)AgentsCount, Unsafe16Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
-//				resultList.Add(best1);
+//                Decision best1 = new Decision((byte)AgentsCount, Unsafe16Array<VelocityPoint>.Create(dp1[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
+//                resultList.Add(best1);
 //                //競合手.Agent1 == 最善手.Agent1 && 競合手.Agent2 == 最善手.Agent2になった場合、競合手をngMoveとして探索をおこない、最善手を探す
 //                for (int i = 0; i < AgentsCount; ++i)
 //                {
-//                    if(IsAgentsMoved[i] || !lastTurnDecided.Agents[i].Equals(best1.Agents[i]))
+//                    if (IsAgentsMoved[i] || !lastTurnDecided.Agents[i].Equals(best1.Agents[i]))
 //                    {
 //                        break;
 //                    }
@@ -104,10 +116,10 @@
 //                    Decision best2 = new Decision((byte)AgentsCount, Unsafe16Array<VelocityPoint>.Create(dp2[0].Ways.GetEnumerable(AgentsCount).Select(x => x.Direction).ToArray()));
 //                    resultList.Add(best2);
 //                }
-                
+
 //                if (CancellationToken.IsCancellationRequested == false)
-//				{
-//					SolverResultList = resultList;
+//                {
+//                    SolverResultList = resultList;
 //                    if (SolverResultList.Count == 2 && score <= 0)  //現時点で引き分けか負けていたら競合を避けるのを優先してみる（デバッグ用）
 //                    {
 //                        var tmp = SolverResultList[0];
@@ -117,8 +129,8 @@
 //                    }
 //                    Log("[SOLVER] SolverResultList.Count = {0}, score = {1}", SolverResultList.Count, score);
 //                }
-//				else
-//					return;
+//                else
+//                    return;
 //                Log("[SOLVER] deepness = {0}", deepness);
 //            }
 //        }
@@ -136,11 +148,11 @@
 //            {
 //                //for (int j = 0; j < greedyDepth; j++)
 //                //{
-//                    //Unsafe16Array<VelocityPoint> move = state.MakeGreedyMove(ScoreBoard, WayEnumerator, AgentsCount);
-//                    //state.Move(move, AgentsCount);
-//                    //Ways moves = state.MakeMoves(AgentsCount, ScoreBoard);
-//                    //SortMoves(ScoreBoard, state, moves, 49, null);
-//                    //state.Move(moves[0].Agent1Way, moves[1].Agent2Way);
+//                //Unsafe16Array<VelocityPoint> move = state.MakeGreedyMove(ScoreBoard, WayEnumerator, AgentsCount);
+//                //state.Move(move, AgentsCount);
+//                //Ways moves = state.MakeMoves(AgentsCount, ScoreBoard);
+//                //SortMoves(ScoreBoard, state, moves, 49, null);
+//                //state.Move(moves[0].Agent1Way, moves[1].Agent2Way);
 //                //}
 //                int score = evaluator.Calculate(ScoreBoard, state.MeBoard, 0, state.Me, state.Enemy) - evaluator.Calculate(ScoreBoard, state.EnemyBoard, 0, state.Enemy, state.Me);
 //                if (greedyDepth % 2 == 1) return -score;
@@ -155,15 +167,15 @@
 //                sways.Add(new SmallWay(way));
 //            }
 //            SortMoves(ScoreBoard, state, sways, count, ngMove);
-            
-//            for(int i = 0; i < sways.Count; ++i)
+
+//            for (int i = 0; i < sways.Count; ++i)
 //            {
 //                if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
 //                //if (count == 0 && !(ngMove is null) && new Decided(ways[i].Agent1Way, ways[i].Agent2Way).Equals(ngMove)) { continue; }	//競合手を避ける場合
 //                if (count == 0 && !(ngMove is null))    //2人とも競合手とは違う手を指す
 //                {
 //                    int j;
-//                    for(j = 0; j < AgentsCount; ++j)
+//                    for (j = 0; j < AgentsCount; ++j)
 //                    {
 //                        if (sways[i].Equals(ngMove.Agents[j]))
 //                        {
@@ -180,8 +192,8 @@
 //                if (alpha < res)
 //                {
 //                    alpha = res;
-//					if (ngMove is null) { dp1[count].UpdateScore(alpha, sways[i].AgentsWay); }
-//					else { dp2[count].UpdateScore(alpha, sways[i].AgentsWay); }
+//                    if (ngMove is null) { dp1[count].UpdateScore(alpha, sways[i].AgentsWay); }
+//                    else { dp2[count].UpdateScore(alpha, sways[i].AgentsWay); }
 //                    if (alpha >= beta) return beta; //βcut
 //                }
 //            }
@@ -190,7 +202,7 @@
 //            return alpha;
 //        }
 
-        
+
 //        //遷移順を決める.  「この関数においては」MeBoard…手番プレイヤのボード, Me…手番プレイヤ、とします。
 //        //引数: stateは手番プレイヤが手を打つ前の探索状態、(way1[i], way2[i])はi番目の合法手（移動量）です。
 //        //以下のルールで優先順を決めます.
@@ -200,26 +212,26 @@
 //        private void SortMoves(sbyte[,] ScoreBoard, SearchState state, SmallWays ways, int deep, Decision ngMove)
 //        {
 
-//		    Unsafe16Array<Point> Killer = new Unsafe16Array<Point>();
-//			if (ngMove is null)
-//			{
-//                if(dp1[deep].Score == int.MinValue)
+//            Unsafe16Array<Point> Killer = new Unsafe16Array<Point>();
+//            if (ngMove is null)
+//            {
+//                if (dp1[deep].Score == int.MinValue)
 //                {
-//                    for(int i = 0; i < AgentsCount; ++i)
+//                    for (int i = 0; i < AgentsCount; ++i)
 //                    {
 //                        Killer[i] = new Point(114, 191);
 //                    }
 //                }
 //                else
 //                {
-//                    for(int i = 0; i < AgentsCount; ++i)
+//                    for (int i = 0; i < AgentsCount; ++i)
 //                    {
 //                        Killer[i] = state.Me[i] + dp1[deep].Ways[i].Direction;
 //                    }
 //                }
-//			}
-//			else
-//			{
+//            }
+//            else
+//            {
 //                if (dp2[deep].Score == int.MinValue)
 //                {
 //                    for (int i = 0; i < AgentsCount; ++i)
@@ -235,25 +247,25 @@
 //                    }
 //                }
 //            }
-            
+
 //            for (int i = 0; i < ways.Count; ++i)
 //            {
 //                sbyte score = 0;
 //                Unsafe16Array<Point> next = new Unsafe16Array<Point>();
-//                for(int j = 0; j < AgentsCount; ++j)
+//                for (int j = 0; j < AgentsCount; ++j)
 //                {
 //                    next[j] = state.Me[j] + ways[i].AgentsWay[j].Direction;
 //                }
 
-//                for(int j = 0; j < AgentsCount; ++j)
+//                for (int j = 0; j < AgentsCount; ++j)
 //                {
-//                    if(Killer[j] != next[j])
+//                    if (Killer[j] != next[j])
 //                        break;
 //                    if (j == AgentsCount - 1)
 //                        score = 100;
 //                }
 
-//                for(int j = 0; j < AgentsCount; ++j)
+//                for (int j = 0; j < AgentsCount; ++j)
 //                {
 //                    if (state.EnemyBoard[next[j]]) score += ScoreBoard[next[j].X, next[j].Y];    //タイル除去によって有利になる
 //                    else if (!state.MeBoard[next[j]]) score += ScoreBoard[next[j].X, next[j].Y]; //移動でMeの陣地が増えて有利になる

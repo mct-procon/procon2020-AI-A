@@ -142,7 +142,19 @@ namespace AngryBee.AI
             int maxDepth = (TurnCount - CurrentTurn) + 1;
             PointEvaluator.Base evaluator = (TurnCount / 3 * 2) < CurrentTurn ? PointEvaluator_Normal : PointEvaluator_Dispersion;
             SearchState state = new SearchState(MyBoard, EnemyBoard, myAgents, EnemyAgents, MySurroundedBoard, EnemySurroundedBoard);
-            int score = PointEvaluator_Normal.Calculate(ScoreBoard, state, 0);
+            int score = 0;
+            for (uint x = 0; x < ScoreBoard.GetLength(0); ++x)
+                for(uint y = 0; y < ScoreBoard.GetLength(1); ++y)
+                {
+                    if (MyBoard[x, y])
+                        score += ScoreBoard[x, y];
+                    else if (MySurroundedBoard[x, y])
+                        score += Math.Abs(ScoreBoard[x, y]);
+                    else if (EnemyBoard[x, y])
+                        score -= ScoreBoard[x, y];
+                    else if (EnemySurroundedBoard[x, y])
+                        score -= Math.Abs(ScoreBoard[x, y]);
+                }
 
             Log("TurnCount = {0}, CurrentTurn = {1}", TurnCount, CurrentTurn);
             //if (!(lastTurnDecided is null)) Log("IsAgent1Moved = {0}, IsAgent2Moved = {1}, lastTurnDecided = {2}", IsAgent1Moved, IsAgent2Moved, lastTurnDecided);
