@@ -35,67 +35,8 @@ namespace AngryBee.Search
 
         private static ReadOnlySpan<VelocityPoint> Surrounder => new VelocityPoint[] { new VelocityPoint(1,0), new VelocityPoint(0, 1), new VelocityPoint(-1, 0), new VelocityPoint(0, -1) }; 
         private static ReadOnlySpan<VelocityPoint> Around => new VelocityPoint[] { new VelocityPoint(1,0), new VelocityPoint(1, -1), new VelocityPoint(1, 1), new VelocityPoint(0, 1), new VelocityPoint(-1, 1), new VelocityPoint(-1, 0), new VelocityPoint(-1, -1), new VelocityPoint(0, -1)};
-        public void UpdateSurroundedState(Way agent, byte width, byte height)
-        {
-            int fills = 0;
-            for(int i = 0; i < Surrounder.Length; ++i)
-            {
-                var p = agent.Locate + Surrounder[i];
-                if (p.X < width && p.Y < height && MeBoard[p])
-                    fills++;
-            }
-            if (fills < 2) return;
-            Span<Point> myStack = stackalloc Point[24 * 24];
 
-            Point point;
-            int myStackSize = 0;
-            ColoredBoardNormalSmaller Walls = MeBoard;
-            Walls.Or(EnemyBoard);
-            ColoredBoardNormalSmaller Checker = new ColoredBoardNormalSmaller(width, 0);
-            ColoredBoardNormalSmaller BadSpaces = new ColoredBoardNormalSmaller(width, height);
-            for (int a_iter = 0; a_iter < Around.Length; ++a_iter)
-            {
-                point = agent.Locate + Around[a_iter];
-                if (point.X >= width || point.Y >= height || Walls[point]) continue;
-                Checker.Clear(height);
-                myStack[0] = point;
-                myStackSize = 1;
-                while (myStackSize > 0)
-                {
-                    point = myStack[--myStackSize];
-                    for (int i = 0; i < 8; i++)
-                    {
-                        var a = Around[i];
-                        var searchTo = point + a;
-                        if (searchTo.X >= width || searchTo.Y >= height)
-                        {
-                            myStackSize++;
-                            goto finish;
-                        }
-                        if (BadSpaces[searchTo])          // reached to bad space.
-                        {
-                            myStackSize++;
-                            goto finish;
-                        }
-                        if (Walls[searchTo]) continue;    // wall
-                        if (Checker[searchTo]) continue;  // needless to search
-                        myStack[myStackSize++] = searchTo;
-                        Checker[searchTo] = true;
-                    }
-                }
-            finish:
-                if (myStackSize > 0)
-                    BadSpaces.Or(Checker);
-                else
-                {
-                    MeSurroundBoard.Or(Checker);
-                    Checker.Invert(height);
-                    EnemySurroundBoard.And(Checker, height);
-                }
-            }
-        }
-
-        public void UpdateSurroundedState(Unsafe16Array<Way> agents, int agentsCount, byte width, byte height)
+        public void UpdateSurroundedState(Unsafe16Array<Way> agents, int agentsCount, byte width, byte height, int deepness)
         {
             bool lazy = false;
             ColoredBoardNormalSmaller Walls, Checker, BadSpaces;
@@ -156,6 +97,9 @@ namespace AngryBee.Search
                         BadSpaces.Or(Checker);
                     else
                     {
+                        ColoredBoardNormalSmaller diff = MeSurroundBoard;
+                        diff.Xor(Checker, height);
+                        SurroundVelocity += diff.PopCount(height) * deepness;
                         MeSurroundBoard.Or(Checker);
                         Checker.Invert(height);
                         EnemySurroundBoard.And(Checker, height);
@@ -217,16 +161,19 @@ namespace AngryBee.Search
                     BadSpaces.Or(Checker);
                 else
                 {
-                    ColoredBoardNormalSmaller diff = MeSurroundBoard;
-                    diff.Xor(Checker, height);
-                    SurroundVelocity += diff.PopCount(height) * deepness;
+                    if (deepness > 0)
+                    {
+                        ColoredBoardNormalSmaller diff = MeSurroundBoard;
+                        diff.Xor(Checker, height);
+                        SurroundVelocity += diff.PopCount(height) * deepness;
+                    }
                     MeSurroundBoard.Or(Checker, height);
                     Checker.Invert(height);
                     EnemySurroundBoard.And(Checker, height);
                 }
             }
         }
-        public SearchState GetNextState(int AgentsCount, Unsafe16Array<Way> ways, sbyte[,] scoreBoard)
+        public SearchState GetNextState(int AgentsCount, Unsafe16Array<Way> ways, sbyte[,] scoreBoard, int deepness)
         {
             var ss = new SearchState();
             ss.MeSurroundBoard = this.MeSurroundBoard;
@@ -249,7 +196,7 @@ namespace AngryBee.Search
                     ss.Me[i] = l;
                 }
             }
-            ss.UpdateSurroundedState(ways, AgentsCount, (byte)scoreBoard.GetLength(0), (byte)scoreBoard.GetLength(1));
+            ss.UpdateSurroundedState(ways, AgentsCount, (byte)scoreBoard.GetLength(0), (byte)scoreBoard.GetLength(1), deepness);
             return ss;
         }
 
@@ -273,7 +220,7 @@ namespace AngryBee.Search
                 ss.MeBoard[l] = true;
                 ss.Me[agentIndex] = l;
             }
-            ss.UpdateSurroundedState(way, (byte)scoreBoard.GetLength(0), (byte)scoreBoard.GetLength(1));
+            ss.UpdateSurroundedState(way, (byte)scoreBoard.GetLength(0), (byte)scoreBoard.GetLength(1), -1);
             return ss;
         }
         public SearchState GetNextStateSingle(int agentIndex, Way way, sbyte[,] scoreBoard, int deepness)
