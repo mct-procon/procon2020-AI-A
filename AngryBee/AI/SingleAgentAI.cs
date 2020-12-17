@@ -13,9 +13,7 @@ namespace AngryBee.AI
         PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
 
-        private Unsafe16Array<Point>[] dp1prev = new Unsafe16Array<Point>[102];  //dp1[i] = 深さi時点での最善手
         private Unsafe16Array<Point>[] dp1 = new Unsafe16Array<Point>[102];  //dp1[i] = 深さi時点での最善手
-        private Unsafe16Array<Point>[] dp2prev = new Unsafe16Array<Point>[102];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
         private Unsafe16Array<Point>[] dp2 = new Unsafe16Array<Point>[102];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
         private Decision lastTurnDecided = null;		//1ターン前に「実際に」打った手（競合していた場合, 競合手==lastTurnDecidedとなる。競合していない場合は, この変数は探索に使用されない）
         public int StartDepth { get; set; } = 1;
@@ -28,8 +26,6 @@ namespace AngryBee.AI
                 agentStateAry[i] = AgentState.Move;
             Array.Clear(dp1, 0, dp1.Length);
             Array.Clear(dp2, 0, dp2.Length);
-            Array.Clear(dp1prev, 0, dp1prev.Length);
-            Array.Clear(dp2prev, 0, dp2prev.Length);
         }
 
         Unsafe16Array<Point> SearchFirstPlace()
@@ -139,16 +135,6 @@ namespace AngryBee.AI
         protected override void Solve()
         {
             var myAgents = SearchFirstPlace();
-            {
-                var tmp = dp1;
-                dp1 = dp1prev;
-                dp1prev = tmp;
-            }
-            {
-                var tmp = dp2;
-                dp2 = dp2prev;
-                dp2prev = tmp;
-            }
             Array.Clear(dp1, 0, dp1.Length);
             Array.Clear(dp2, 0, dp2.Length);
 
@@ -184,10 +170,6 @@ namespace AngryBee.AI
                     if (MyAgentsState[agent] == AgentState.NonPlaced) continue;
                     NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, agent);
                 }
-                for (int agent = 0; agent < AgentsCount; ++agent)
-                    if(dp1[1][agent] == dp1prev[1][agent])
-                        for(int i = 1; i <= deepness; ++i)
-                            dp1[i - 1][agent] = dp1[i][agent];
                 var res = dp1[0];
                 for (int agent = 0; agent < AgentsCount; ++agent)
                     if (MyAgentsState[agent] == AgentState.NonPlaced) res[agent] = myAgents[agent];
@@ -205,10 +187,6 @@ namespace AngryBee.AI
                         if (MyAgentsState[agent] == AgentState.NonPlaced) continue;
                         NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, best1, agent);
                     }
-                    for (int agent = 0; agent < AgentsCount; ++agent)
-                        if (dp2[1][agent] == dp2prev[1][agent])
-                            for (int iii = 1; iii <= deepness; ++iii)
-                                dp2[iii - 1][agent] = dp2[iii][agent];
                     res = dp2[0];
                     for (int agent = 0; agent < AgentsCount; ++agent)
                         if (MyAgentsState[agent] == AgentState.NonPlaced) res[agent] = myAgents[agent];
