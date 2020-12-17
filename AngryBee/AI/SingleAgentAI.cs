@@ -246,7 +246,7 @@ namespace AngryBee.AI
                 for (int i = 0; i < 10; ++i)
                 {
                     sb.Append("  ");
-                    sb.Append(dp1[i][agent].Locate);
+                    sb.Append(dp1[i][agent]);
                 }
                 Log(sb.ToString());
             }
@@ -276,9 +276,9 @@ namespace AngryBee.AI
                     for (j = 0; j < AgentsCount; ++j)
                     {
                         if (j == nowAgent) continue;
-                        if (ngMove is null && dp1[count][j].Locate == way)
+                        if (ngMove is null && dp1[count][j] == way)
                             break;
-                        if (!(ngMove is null) && dp2[count][j].Locate == way)
+                        if (!(ngMove is null) && dp2[count][j] == way)
                             break;
                     }
                     if (j != AgentsCount) continue;
