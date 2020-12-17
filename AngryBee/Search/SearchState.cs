@@ -200,29 +200,7 @@ namespace AngryBee.Search
             return ss;
         }
 
-        public SearchState GetNextStateSingle(int agentIndex, Way way, sbyte[,] scoreBoard)
-        {
-            var ss = new SearchState();
-            ss.MeSurroundBoard = this.MeSurroundBoard;
-            ss.EnemySurroundBoard = this.EnemySurroundBoard;
-            ss.MeBoard = this.MeBoard;
-            ss.EnemyBoard = this.EnemyBoard;
-            ss.Me = this.Me;
-            ss.Enemy = this.Enemy;
-            ss.PointVelocity = PointVelocity;
-            var l = way.Locate;
-            if(!ss.MeBoard[l])
-                ss.PointVelocity += scoreBoard[l.X, l.Y];
-            if (ss.EnemyBoard[l]) // タイル除去
-                ss.EnemyBoard[l] = false;
-            else
-            {
-                ss.MeBoard[l] = true;
-                ss.Me[agentIndex] = l;
-            }
-            ss.UpdateSurroundedState(way, (byte)scoreBoard.GetLength(0), (byte)scoreBoard.GetLength(1), -1);
-            return ss;
-        }
+        public SearchState GetNextStateSingle(int agentIndex, Way way, sbyte[,] scoreBoard) => GetNextStateSingle(agentIndex, way, scoreBoard, -1);
         public SearchState GetNextStateSingle(int agentIndex, Way way, sbyte[,] scoreBoard, int deepness)
         {
             var ss = new SearchState();
