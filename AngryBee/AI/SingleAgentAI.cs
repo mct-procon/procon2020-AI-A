@@ -13,10 +13,10 @@ namespace AngryBee.AI
         PointEvaluator.Base PointEvaluator_Dispersion = new PointEvaluator.Dispersion();
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
 
-        private Unsafe16Array<Way>[] dp1prev = new Unsafe16Array<Way>[102];  //dp1[i] = 深さi時点での最善手
-        private Unsafe16Array<Way>[] dp1 = new Unsafe16Array<Way>[102];  //dp1[i] = 深さi時点での最善手
-        private Unsafe16Array<Way>[] dp2prev = new Unsafe16Array<Way>[102];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
-        private Unsafe16Array<Way>[] dp2 = new Unsafe16Array<Way>[102];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
+        private Unsafe16Array<Point>[] dp1prev = new Unsafe16Array<Point>[102];  //dp1[i] = 深さi時点での最善手
+        private Unsafe16Array<Point>[] dp1 = new Unsafe16Array<Point>[102];  //dp1[i] = 深さi時点での最善手
+        private Unsafe16Array<Point>[] dp2prev = new Unsafe16Array<Point>[102];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
+        private Unsafe16Array<Point>[] dp2 = new Unsafe16Array<Point>[102];  //dp2[i] = 競合手を指さないとしたときの, 深さi時点での最善手
         private Decision lastTurnDecided = null;		//1ターン前に「実際に」打った手（競合していた場合, 競合手==lastTurnDecidedとなる。競合していない場合は, この変数は探索に使用されない）
         public int StartDepth { get; set; } = 1;
         private Unsafe16Array<AgentState> agentStateAry = new Unsafe16Array<AgentState>();
@@ -126,8 +126,12 @@ namespace AngryBee.AI
 
             foreach (var p in recommends.OrderBy(i => rand.Next()))
             {
+                do
+                {
+                    cur++;
+                    if (cur >= AgentsCount) return newMyAgents;
+                } while (MyAgentsState[cur] == AgentState.Move);
                 newMyAgents[cur] = p;
-                if (cur >= AgentsCount) return newMyAgents;
             }
             return newMyAgents;
         }
@@ -181,10 +185,10 @@ namespace AngryBee.AI
                     NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, null, agent);
                 }
                 for (int agent = 0; agent < AgentsCount; ++agent)
-                    if(dp1[1][agent].Locate == dp1prev[1][agent].Locate)
+                    if(dp1[1][agent] == dp1prev[1][agent])
                         for(int i = 1; i <= deepness; ++i)
                             dp1[i - 1][agent] = dp1[i][agent];
-                var res = Unsafe16Array.Create(dp1[0].GetEnumerable(AgentsCount).Select(x => x.Locate).ToArray());
+                var res = dp1[0];
                 for (int agent = 0; agent < AgentsCount; ++agent)
                     if (MyAgentsState[agent] == AgentState.NonPlaced) res[agent] = myAgents[agent];
                 Decision best1 = new Decision((byte)AgentsCount, res, agentStateAry);
@@ -202,10 +206,10 @@ namespace AngryBee.AI
                         NegaMax(deepness, state, int.MinValue + 1, 0, evaluator, best1, agent);
                     }
                     for (int agent = 0; agent < AgentsCount; ++agent)
-                        if (dp2[1][agent].Locate == dp2prev[1][agent].Locate)
+                        if (dp2[1][agent] == dp2prev[1][agent])
                             for (int iii = 1; iii <= deepness; ++iii)
                                 dp2[iii - 1][agent] = dp2[iii][agent];
-                    res = Unsafe16Array.Create(dp2[0].GetEnumerable(AgentsCount).Select(x => x.Locate).ToArray());
+                    res = dp2[0];
                     for (int agent = 0; agent < AgentsCount; ++agent)
                         if (MyAgentsState[agent] == AgentState.NonPlaced) res[agent] = myAgents[agent];
                     Decision best2 = new Decision((byte)AgentsCount, res, agentStateAry);
@@ -257,11 +261,11 @@ namespace AngryBee.AI
             if (CancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
             SingleAgentWays ways = state.MakeMovesSingle(AgentsCount, nowAgent, ScoreBoard);
 
-            for(int i = 0; i < ways.ActualCount; ++i)
+            for(int i = 0; i < ways.Count; ++i)
             {
                 var way = ways.Data[i];
                 if (count == 0 && !(ngMove is null))    //競合手とは違う手を指す
-                    if (way.Locate == ngMove.Agents[nowAgent]) continue;
+                    if (way == ngMove.Agents[nowAgent]) continue;
               
                 SearchState newState = state.GetNextStateSingle(nowAgent, way, ScoreBoard, deepness);
 
@@ -272,9 +276,9 @@ namespace AngryBee.AI
                     for (j = 0; j < AgentsCount; ++j)
                     {
                         if (j == nowAgent) continue;
-                        if (ngMove is null && dp1[count][j].Locate == way.Locate)
+                        if (ngMove is null && dp1[count][j].Locate == way)
                             break;
-                        if (!(ngMove is null) && dp2[count][j].Locate == way.Locate)
+                        if (!(ngMove is null) && dp2[count][j].Locate == way)
                             break;
                     }
                     if (j != AgentsCount) continue;
