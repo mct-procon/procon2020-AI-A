@@ -34,116 +34,91 @@ namespace AngryBee.AI
 
         Unsafe16Array<Point> SearchFirstPlace()
         {
-            int cur = 0;
-            for (int i = 0; i < AgentsCount; ++i)
-                if (MyAgentsState[i] == AgentState.NonPlaced)
-                {
-                    cur = i;
-                    break;
-                }
-            if (MyAgentsState[cur] != AgentState.NonPlaced) return MyAgents;
-            Random rand = new Random();
-            List<Point> recommends = new List<Point>();
             Unsafe16Array<Point> newMyAgents = MyAgents;
-
 
             //均等に配置する
             //平方根を用いていろいろする
-            int xn = (int)Math.Sqrt(AgentsCount);
-            int yn = AgentsCount / xn;
-            int ratio = ScoreBoard.GetLength(0) / ScoreBoard.GetLength(1); //縦横の比率
+            uint xn = (uint)Math.Sqrt(AgentsCount);
+            uint yn = (uint)AgentsCount / xn;
+            uint ratio = (uint)(ScoreBoard.GetLength(0) / ScoreBoard.GetLength(1)); //縦横の比率
             if (ScoreBoard.GetLength(0) > ScoreBoard.GetLength(1))
             {
-                int tmp = xn;
+                uint tmp = xn;
                 xn = yn;
                 yn = tmp;
             }
-            int left = AgentsCount - (xn * yn); //AgentsCountが7の時など、エージェントが余ってしまうときに
-            int spaceX = ScoreBoard.GetLength(0) / (xn * ratio);
-            int spaceY = ScoreBoard.GetLength(1) / yn;
-            int flag = 0;
-            for (byte i = 0; i < AgentsCount - left; i++)
+            uint left = (uint)(AgentsCount - (xn * yn)); //AgentsCountが7の時など、エージェントが余ってしまうときに
+            uint spaceX = (uint)ScoreBoard.GetLength(0) / (xn * ratio);
+            uint spaceY = (uint)ScoreBoard.GetLength(1) / yn;
+            for (byte i = 0; i < AgentsCount - left;)
             {
+                uint baseX = spaceX * (i % xn) + spaceX / 2, baseY = spaceY * (i / xn) + spaceY / 2;
+                if (MyAgentsState[i] == AgentState.Move) goto next;
                 for(byte j = 0; j < spaceX / 2; j++)
                 {
-                    if (ScoreBoard[(spaceX * (i % xn) + spaceX / 2 + j) * ratio, spaceY * (i / xn) + spaceY / 2] >= 0)
+                    if (ScoreBoard[(baseX + j) * ratio, baseY] >= 0 && !EnemyBoard[(baseX + j) * ratio, baseY])
                     {
-                        recommends.Add(new Point((byte)((spaceX * (i % xn) + spaceX / 2 + j)*ratio), (byte)(spaceY * (i / xn) + spaceY / 2)));
-                        flag = 1;
-                        break;
+                        newMyAgents[i] = new Point((byte)((baseX + j) * ratio), (byte)baseY);
+                        goto next;
                     }
                 }
                 for (byte j = 0; j < spaceX / 2; j++)
                 {
-                    if (ScoreBoard[(spaceX * (i % xn) + spaceX / 2 - j) * ratio, spaceY * (i / xn) + spaceY / 2] >= 0 && flag == 0)
+                    if (ScoreBoard[(baseX - j) * ratio, baseY] >= 0 && !EnemyBoard[(baseX - j) * ratio, baseY])
                     {
-                        recommends.Add(new Point((byte)((spaceX * (i % xn) + spaceX / 2 - j) * ratio), (byte)(spaceY * (i / xn) + spaceY / 2)));
-                        flag = 1;
-                        break;
+                        newMyAgents[i] = new Point((byte)((baseX - j) * ratio), (byte)baseY);
+                        goto next;
                     }
                 }
                 for (byte j = 0; j < spaceY / 2; j++)
                 {
-                    if (ScoreBoard[(spaceX * (i % xn) + spaceX / 2) * ratio, spaceY * (i / xn) + spaceY / 2 + j] >= 0 && flag == 0)
+                    if (ScoreBoard[baseX * ratio, baseY + j] >= 0 && !EnemyBoard[baseX * ratio, baseY + j])
                     {
-                        recommends.Add(new Point((byte)((spaceX * (i % xn) + spaceX / 2) * ratio), (byte)(spaceY * (i / xn) + spaceY / 2 + j)));
-                        flag = 1;
-                        break;
+                        newMyAgents[i] = new Point((byte)(baseX * ratio), (byte)(baseY + j));
+                        goto next;
                     }
                 }
                 for (byte j = 0; j < spaceX / 2; j++)
                 {
-                    if (ScoreBoard[(spaceX * (i % xn) + spaceX / 2) * ratio, spaceY * (i / xn) + spaceY / 2 - j] >= 0 && flag == 0)
+                    if (ScoreBoard[baseX * ratio, baseY - j] >= 0 && !EnemyBoard[baseX * ratio, baseY - j])
                     {
-                        recommends.Add(new Point((byte)((spaceX * (i % xn) + spaceX / 2) * ratio), (byte)(spaceY * (i / xn) + spaceY / 2 - j)));
-                        flag = 1;
-                        break;
+                        newMyAgents[i] = new Point((byte)(baseX * ratio), (byte)(baseY - j));
+                        goto next;
                     }
                 }
-                if (flag == 0)
-                    recommends.Add(new Point((byte)((spaceX * (i % xn) + spaceX / 2) * ratio), (byte)(spaceY * (i / xn) + spaceY / 2)));
+                newMyAgents[i] = new Point((byte)(baseX * ratio), (byte)baseY);
+                next:
+                ++i;
             }
 
+            if (left == 0) return newMyAgents;
+            int cur = AgentsCount - (int)left;
+            Random rand = new Random();
+            List<Point> recommends = new List<Point>();
             //余ったエージェントの配置
             // 10点より高いところに配置する
-            byte num = 0;
-            for (int x = 0; x < ScoreBoard.GetLength(0); ++x)
-                for (int y = 0; y < ScoreBoard.GetLength(1); ++y)
-                    if (ScoreBoard[x, y] >= 0 && num < left)
-                    {
-                        recommends.Add(new Point((byte)x, (byte)y));
-                        num++;
-                    }
-
-            //まだ余っていたら
-            for (int x = 0; x < ScoreBoard.GetLength(0); ++x)
-                for (int y = 0; y < ScoreBoard.GetLength(1); ++y)
-                    if (ScoreBoard[x, y] >= -1 && num < left)
-                    {
-                        recommends.Add(new Point((byte)x, (byte)y));
-                        num++;
-                    }
+            for (byte x = 0; x < ScoreBoard.GetLength(0); ++x)
+                for (byte y = 0; y < ScoreBoard.GetLength(1); ++y)
+                    if (ScoreBoard[x, y] >= 10 && !EnemyBoard[x, y])
+                        recommends.Add(new Point(x, y));
 
             foreach (var p in recommends.OrderBy(i => rand.Next()))
             {
-                bool isSkip = false;
-                for (int i = 0; i < AgentsCount; ++i)
-                    if ((MyAgentsState[i] != AgentState.NonPlaced && MyAgents[i] == p) ||
-                        (EnemyAgentsState[i] != AgentState.NonPlaced && EnemyAgents[i] == p))
-                    {
-                        isSkip = true;
-                        break;
-                    }
-                if (isSkip) continue;
-
                 newMyAgents[cur] = p;
-                for (int i = cur + 1; i < AgentsCount; ++i)
-                    if (MyAgentsState[i] == AgentState.NonPlaced)
-                    {
-                        cur = i;
-                        break;
-                    }
-                if (cur == AgentsCount) break;
+                cur++;
+                if (cur >= AgentsCount) return newMyAgents;
+            }
+
+            //まだ余っていたら
+            for (byte x = 0; x < ScoreBoard.GetLength(0); ++x)
+                for (byte y = 0; y < ScoreBoard.GetLength(1); ++y)
+                    if (ScoreBoard[x, y] >= -1 && !EnemyBoard[x, y])
+                        recommends.Add(new Point(x, y));
+
+            foreach (var p in recommends.OrderBy(i => rand.Next()))
+            {
+                newMyAgents[cur] = p;
+                if (cur >= AgentsCount) return newMyAgents;
             }
             return newMyAgents;
         }
