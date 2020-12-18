@@ -9,7 +9,7 @@ namespace AngryBee
         public static void Main(string[] args)
 		{
 			int aiType = 0;
-			Console.WriteLine("AIの種類を入力(3:Aho_8, 4:SA_AI)");
+			Console.WriteLine("AIの種類を入力(3:Aho_8, 4:SA_AI, 5:SA_AI(MT)");
 			aiType = int.Parse(Console.ReadLine());
 			MCTProcon31Protocol.AIFramework.AIBase AI = null;
 
@@ -30,6 +30,13 @@ namespace AngryBee
             if(aiType == 4)
             {
                 AI = new AI.SingleAgentAI(1);
+            }
+            if (aiType == 5)
+            {
+                Console.WriteLine("Type threads count.(0 or empty = Processor Count).");
+                var str = Console.ReadLine();
+                var threads = string.IsNullOrWhiteSpace(str) || int.Parse(str) == 0 ? Environment.ProcessorCount : int.Parse(str);
+                AI = new AI.SingleAgentMTAI(threads);
             }
 
             int portId;
