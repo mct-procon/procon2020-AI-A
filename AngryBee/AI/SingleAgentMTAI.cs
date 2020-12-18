@@ -136,7 +136,7 @@ namespace AngryBee.AI
             return newMyAgents;
         }
 
-        protected Unsafe16Array<Point> GetResult((int, CalculationNode)[] calculationResult, Unsafe16Array<Point> res)
+        protected Unsafe16Array<Point> GetResult((int, CalculationNode)[] calculationResult, Unsafe16Array<Point> res, Decision lastTurnDecided)
         {
             Array.Sort(calculationResult, resultComparator);
             uint flag = 0;
@@ -147,8 +147,10 @@ namespace AngryBee.AI
                 if (calculationResult[i].Item2 == null || calculationResult[i].Item2.Children.Count == 0)
                     goto success;
                 var dest = calculationResult[i].Item2.Children[0].state.Me[agent];
+                if (!(lastTurnDecided is null) && !IsAgentsMoved[agent] && dest == lastTurnDecided.Agents[agent])
+                    goto restart;
                 for (int p = 0; p < AgentsCount; ++p)
-                    if ((flag & (1 << p)) > 0 && res[p] == dest)
+                    if ((flag & (1 << p)) != 0 && res[p] == dest)
                         goto restart;
                 res[agent] = dest;
                 goto success;
@@ -246,53 +248,14 @@ namespace AngryBee.AI
                 {
                     Wait(result[i].Item2);
                     result[i].Item2.Children.Sort(resultComparator);
+                    result[i].Item2.Result = result[i].Item2.Children.Count > 0 ? result[i].Item2.Children[0].Result : int.MaxValue;
                 }
                 if (CancellationToken.IsCancellationRequested) return;
-                Decision best1 = new Decision((byte)AgentsCount, GetResult(result, myAgents), agentStateAry);
+                Decision best1 = new Decision((byte)AgentsCount, GetResult(result, myAgents, score <= 0 ? lastTurnDecided : null), agentStateAry);
                 resultList.Add(best1);
-                //競合手.Agent1 == 最善手.Agent1 && 競合手.Agent2 == 最善手.Agent2になった場合、競合手をngMoveとして探索をおこない、最善手を探す
-                for (int i = 0; i < AgentsCount; ++i)
-                {
-                    if (IsAgentsMoved[i] || (!(lastTurnDecided is null) && lastTurnDecided.Agents[i] != best1.Agents[i]))
-                        break;
-                    if (i < AgentsCount - 1) continue;
-                    DispatchedThreads = 0;
-                    for (int agent = 0; agent < AgentsCount; ++agent)
-                    {
-                        if (MyAgentsState[agent] == AgentState.NonPlaced)
-                            result[agent] = (agent, new CalculationNode() { Result = int.MaxValue, Children = null });
-                        else
-                        {
-                            result[agent] = (agent, new CalculationNode());
-                            CalcStart(deepness, state, int.MinValue + 1, 0, evaluator, null, agent, AgentsCount, result[agent].Item2);
-                        }
-                    }
-                    Log("[SOLVER/MT]Dispatched {0} Thread(s).", DispatchedThreads);
-                    if (CancellationToken.IsCancellationRequested) return;
-                    for (int i2 = 0; i2 < result.Length; ++i2)
-                    {
-                        Wait(result[i2].Item2);
-                        result[i2].Item2.Children.Sort(resultComparator);
-                    }
-                    if (CancellationToken.IsCancellationRequested) return;
-                    Decision best2 = new Decision((byte)AgentsCount, GetResult(result, myAgents), agentStateAry);
-                    resultList.Add(best2);
-                }
-
-                if (CancellationToken.IsCancellationRequested == false)
-                {
-                    SolverResultList = resultList;
-                    if (SolverResultList.Count == 2 && score <= 0)  //現時点で引き分けか負けていたら競合を避けるのを優先してみる（デバッグ用）
-                    {
-                        var tmp = SolverResultList[0];
-                        SolverResultList[0] = SolverResultList[1];
-                        SolverResultList[1] = tmp;
-                        Log("[SOLVER] Swaped! {0} {1}", SolverResult.Agents[0], SolverResult.Agents[1]);
-                    }
-                    Log("[SOLVER] SolverResultList.Count = {0}, score = {1}", SolverResultList.Count, score);
-                }
-                else
-                    return;
+                SolverResultList = resultList;
+                Log("[SOLVER] SolverResultList.Count = {0}, score = {1}", SolverResultList.Count, score);
+                if (CancellationToken.IsCancellationRequested) return;
                 Log("[SOLVER] deepness = {0}", deepness);
             }
         }
