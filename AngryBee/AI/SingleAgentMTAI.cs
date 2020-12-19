@@ -16,13 +16,27 @@ namespace AngryBee.AI
         PointEvaluator.Base PointEvaluator_Normal = new PointEvaluator.Normal();
         ResultComparator1 resultComparator = new ResultComparator1();
 
-
         private Decision lastTurnDecided = null;		//1ターン前に「実際に」打った手（競合していた場合, 競合手==lastTurnDecidedとなる。競合していない場合は, この変数は探索に使用されない）
         public int StartDepth { get; set; } = 1;
         private Unsafe16Array<AgentState> agentStateAry = new Unsafe16Array<AgentState>();
 
         private int DispatchedThreads = 0;
         private int CreationThreads = 0;
+
+        private static Random rng = new Random();
+
+        public static void Shuffle<T>(IList<T> list)
+        {
+            int n = list.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = rng.Next(n + 1);
+                T value = list[k];
+                list[k] = list[n];
+                list[n] = value;
+            }
+        }
 
         public SingleAgentMTAI(int creationThreads, int startDepth = 1)
         {
@@ -146,7 +160,7 @@ namespace AngryBee.AI
                 int agent = calculationResult[i].Item1;
                 if (calculationResult[i].Item2 == null || calculationResult[i].Item2.Children.Count == 0)
                     goto success;
-                var dest = calculationResult[i].Item2.Children[0].state.Me[agent];
+                var dest = calculationResult[i].Item2.Children[0].nextWay;
                 if (!(lastTurnDecided is null) && !IsAgentsMoved[agent] && dest == lastTurnDecided.Agents[agent])
                     goto restart;
                 for (int p = 0; p < AgentsCount; ++p)
@@ -156,9 +170,10 @@ namespace AngryBee.AI
                 goto success;
             restart:
                 var children = calculationResult[i].Item2.Children;
-                if (children.Count == 1)
+                if (children.Count == 1 || children[1].Result == int.MinValue)
                     goto success;
                 calculationResult[i].Item2.Result = children[1].Result;
+                children[0].Result = int.MinValue;
                 for (int j = 1; j < children.Count; ++j)
                     children[j - 1] = children[j];
                 for (int j = i + 1; j < calculationResult.Length; ++j)
@@ -172,13 +187,16 @@ namespace AngryBee.AI
             success:
                 flag |= 1u << agent;
             }
+            if (this.lastTurnDecided is null) return res;
+            for (int i = 0; i < AgentsCount; ++i)
+                Log($"[GetResult]{i} : {MyAgents[i]} -> {res[i]}");
             return res;
         }
         protected override void Solve()
         {
             int Wait(CalculationNode node)
             {
-                if (node == null) return int.MinValue;
+                if (node == null) return -100000000;
                 if (node.Children == null)
                 {
                     node.CalculationTask.Wait();
@@ -239,7 +257,7 @@ namespace AngryBee.AI
                     else
                     {
                         result[agent] = (agent, new CalculationNode());
-                        CalcStart(deepness, state, int.MinValue + 1, 0, evaluator, null, agent, AgentsCount, result[agent].Item2);
+                        CalcStart(deepness, state, int.MinValue + 1, 0, evaluator, agent, AgentsCount * 8, result[agent].Item2);
                     }
                 }
                 Log("[SOLVER/MT]Dispatched {0} Thread(s).", DispatchedThreads);
@@ -247,12 +265,18 @@ namespace AngryBee.AI
                 for (int i = 0; i < result.Length; ++i)
                 {
                     Wait(result[i].Item2);
-                    result[i].Item2.Children.Sort(resultComparator);
-                    result[i].Item2.Result = result[i].Item2.Children.Count > 0 ? result[i].Item2.Children[0].Result : int.MaxValue;
+                    var children = result[i].Item2.Children;
+                    if ((children is null) || children.Count == 0)
+                    {
+                        result[i].Item2.Result = int.MaxValue;
+                        continue;
+                    }
+                    Shuffle(children);
+                    children.Sort(resultComparator);
+                    result[i].Item2.Result = children[0].Result;
                 }
                 if (CancellationToken.IsCancellationRequested) return;
-                Decision best1 = new Decision((byte)AgentsCount, GetResult(result, myAgents, score <= 0 ? lastTurnDecided : null), agentStateAry);
-                resultList.Add(best1);
+                resultList.Add(new Decision((byte)AgentsCount, GetResult(result, myAgents, score <= 0 ? lastTurnDecided : null), agentStateAry));
                 SolverResultList = resultList;
                 Log("[SOLVER] SolverResultList.Count = {0}, score = {1}", SolverResultList.Count, score);
                 if (CancellationToken.IsCancellationRequested) return;
@@ -277,7 +301,7 @@ namespace AngryBee.AI
             //    Log(sb.ToString());
             //}
         }
-        private void CalcStart(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, int nowAgent, int parentThreads, CalculationNode parent)
+        private void CalcStart(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, int nowAgent, int parentThreads, CalculationNode parent)
         {
             if (CancellationToken.IsCancellationRequested == true) return;    //何を返しても良いのでとにかく返す
             
@@ -285,31 +309,25 @@ namespace AngryBee.AI
             for(int i = 0; i < ways.Count; ++i)
             {
                 var way = ways.Data[i];
-                if (count == 0 && !(ngMove is null))    //競合手とは違う手を指す
-                    if (way == ngMove.Agents[nowAgent]) break;
-
                 SearchState newState = state.GetNextStateSingle(nowAgent, way, ScoreBoard, deepness);
-
-                if (parentThreads * AgentsCount > CreationThreads || deepness == 1)
+                if (parentThreads * 8 / 2 > CreationThreads || deepness == 1)
                 {
                     var copied_scoreBoard = new sbyte[ScoreBoard.GetLength(0), ScoreBoard.GetLength(1)];
                     Array.Copy(ScoreBoard, copied_scoreBoard, ScoreBoard.Length);
-                    CalculationNode currentNode = new CalculationNode(deepness - 1, newState, alpha, count + 1, evaluator, ngMove, nowAgent, CancellationToken, AgentsCount, copied_scoreBoard);
+                    CalculationNode currentNode = new CalculationNode(deepness - 1, way, newState, alpha, count + 1, evaluator, nowAgent, CancellationToken, AgentsCount, copied_scoreBoard);
                     parent.Children.Add(currentNode);
                     DispatchedThreads++;
                 }
                 else
                 {
-                    CalculationNode currentNode = new CalculationNode();
+                    CalculationNode currentNode = new CalculationNode(way, newState);
                     parent.Children.Add(currentNode);
-                    CalcStart(deepness - 1, newState, alpha, count + 1, evaluator, ngMove, nowAgent, parentThreads * 8, currentNode);
+                    CalcStart(deepness - 1, newState, alpha, count + 1, evaluator, nowAgent, parentThreads * 8, currentNode);
                 }
             }
             //Log("NODES : {0} nodes, elasped {1} ", i, sw.Elapsed);
             ways.End();
         }
-
-
 
         protected override int CalculateTimerMiliSconds(int miliseconds)
         {
@@ -342,11 +360,11 @@ namespace AngryBee.AI
             public int alpha;
             public int count;
             public PointEvaluator.Base evaluator;
-            public Decision ngMove;
             public int nowAgent;
             public CancellationToken cancellationToken;
             public int agentsCount;
             public sbyte[,] scoreBoard;
+            public Point nextWay;
 
             public int Result;
 
@@ -355,14 +373,21 @@ namespace AngryBee.AI
                 Children = new List<CalculationNode>();
             }
 
-            public CalculationNode(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, int nowAgent, CancellationToken cancellationToken, int agentsCount, sbyte[,] scoreBoard)
+            public CalculationNode(Point nextWay, SearchState state)
+            {
+                this.nextWay = nextWay;
+                this.state = state;
+                Children = new List<CalculationNode>();
+            }
+
+            public CalculationNode(int deepness, Point nextWay, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, int nowAgent, CancellationToken cancellationToken, int agentsCount, sbyte[,] scoreBoard)
             {
                 this.deepness = deepness;
+                this.nextWay = nextWay;
                 this.state = state;
                 this.alpha = alpha;
                 this.count = count;
                 this.evaluator = evaluator;
-                this.ngMove = ngMove;
                 this.nowAgent = nowAgent;
                 this.cancellationToken = cancellationToken;
                 this.agentsCount = agentsCount;
@@ -371,10 +396,10 @@ namespace AngryBee.AI
             }
 
 
-            public int Calc(int deepness, SearchState state, int alpha, int count, PointEvaluator.Base evaluator, Decision ngMove, int nowAgent, CancellationToken cancellationToken, int agentsCount, sbyte[,] scoreBoard)
+            public int Calc(int deepness, SearchState state, int alpha, int count)
             {
                 if (deepness == 0)
-                    return evaluator.Calculate(scoreBoard, state, 0);
+                    return evaluator.Calculate(scoreBoard, state, count);
                 if (cancellationToken.IsCancellationRequested == true) { return alpha; }    //何を返しても良いのでとにかく返す
                 SingleAgentWays ways = state.MakeMovesSingle(agentsCount, nowAgent, scoreBoard);
 
@@ -384,7 +409,7 @@ namespace AngryBee.AI
 
                     SearchState newState = state.GetNextStateSingle(nowAgent, way, scoreBoard, deepness);
 
-                    int res = Calc(deepness - 1, newState, alpha, count + 1, evaluator, ngMove, nowAgent, cancellationToken, agentsCount, scoreBoard);
+                    int res = Calc(deepness - 1, newState, alpha, count + 1);
                     if (alpha < res)
                         alpha = res;
                 }
@@ -398,7 +423,7 @@ namespace AngryBee.AI
             {
                 if (deepness == 0)
                 {
-                    Result = evaluator.Calculate(scoreBoard, state, 0);
+                    Result = evaluator.Calculate(scoreBoard, state, count);
                     return;
                 }
                 if (cancellationToken.IsCancellationRequested == true) { Result = alpha; return; }    //何を返しても良いのでとにかく返す
@@ -410,7 +435,7 @@ namespace AngryBee.AI
 
                     SearchState newState = state.GetNextStateSingle(nowAgent, way, scoreBoard, deepness);
 
-                    int res = Calc(deepness - 1, newState, alpha, count + 1, evaluator, ngMove, nowAgent, cancellationToken, agentsCount, scoreBoard);
+                    int res = Calc(deepness - 1, newState, alpha, count + 1);
                     if (alpha < res)
                         alpha = res;
                 }
